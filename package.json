@@ -1,7 +1,7 @@
 {
-  "name": "fxnai",
+  "name": "fxnjs",
   "version": "0.0.1",
-  "description": "Add edge and cloud machine learning into your web and Node.js apps. Register at https://hub.natml.ai.",
+  "description": "Edge and cloud prediction functions for JavaScript and Node.js AI apps.",
   "scripts": {
     "build": "npm run clean && echo Using TypeScript && tsc --version && tsc --pretty",
     "test": "TS_NODE_PROJECT=tsconfig.test.json npx mocha --loader=ts-node/esm --experimental-specifier-resolution=node --require dotenv/config --colors --recursive --timeout 999999 test/**/*.ts",
@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/natmlx/natml-js.git"
+    "url": "git+https://github.com/fxnai/fxnjs.git"
   },
   "author": "NatML <hi@natml.ai> (https://natml.ai)",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/natmlx/natml-js/issues"
+    "url": "https://github.com/fxnai/fxnjs/issues"
   },
-  "homepage": "https://natml.ai",
+  "homepage": "https://fxn.ai",
   "main": "build/lib/index.js",
   "typings": "build/types/index.d.ts",
   "files": [
