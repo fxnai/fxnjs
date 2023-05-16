@@ -1,6 +1,6 @@
 {
   "name": "fxnai",
-  "version": "0.0.12",
+  "version": "0.0.1",
   "description": "Add edge and cloud machine learning into your web and Node.js apps. Register at https://hub.natml.ai.",
   "scripts": {
     "build": "npm run clean && echo Using TypeScript && tsc --version && tsc --pretty",
