@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Mocha Tests",
+            "args": [
+                "--loader=ts-node/esm",
+                "--experimental-specifier-resolution=node",                
+                "node_modules/mocha/lib/cli/cli.js",
+                "test/**/*.ts",
+                "--timeout",
+                "999999",
+                "--colors",
+                "--recursive"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "env": {
+                "TS_NODE_PROJECT": "tsconfig.test.json",
+            },
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

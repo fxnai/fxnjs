@@ -1,0 +1,59 @@
+{
+  "name": "fxnai",
+  "version": "0.0.12",
+  "description": "Add edge and cloud machine learning into your web and Node.js apps. Register at https://hub.natml.ai.",
+  "scripts": {
+    "build": "npm run clean && echo Using TypeScript && tsc --version && tsc --pretty",
+    "test": "TS_NODE_PROJECT=tsconfig.test.json npx mocha --loader=ts-node/esm --experimental-specifier-resolution=node --require dotenv/config --colors --recursive --timeout 999999 test/**/*.ts",
+    "clean": "rm -rf build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/natmlx/natml-js.git"
+  },
+  "author": "NatML <hi@natml.ai> (https://natml.ai)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/natmlx/natml-js/issues"
+  },
+  "homepage": "https://natml.ai",
+  "main": "build/lib/index.js",
+  "typings": "build/types/index.d.ts",
+  "files": [
+    "build"
+  ],
+  "dependencies": {
+    "@types/data-urls": "^2.0.1",
+    "axios": "^0.24.0",
+    "base64-arraybuffer": "^1.0.2",
+    "browser-or-node": "^2.1.1",
+    "data-urls": "^3.0.1"
+  },
+  "devDependencies": {
+    "@testdeck/mocha": "^0.1.2",
+    "@types/chai": "^4.2.22",
+    "@types/chai-as-promised": "^7.1.4",
+    "@types/mocha": "^9.0.0",
+    "@types/sharp": "^0.29.4",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "dotenv": "^16.0.3",
+    "mocha": "^9.1.3",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4",
+    "webpack": "^5.65.0"
+  },
+  "keywords": [
+    "machine learning",
+    "ml",
+    "deep learning",
+    "computer vision",
+    "vision",
+    "natural language",
+    "nlp",
+    "opencv",
+    "tensorflow",
+    "pytorch",
+    "onnx"
+  ]
+}

@@ -1,0 +1,16 @@
+# Node
+node_modules/
+dist/
+build/
+logs/
+
+# Environment
+.env*
+!.env*example
+
+# IDE
+#.vscode
+.idea
+
+# Misc
+.DS_Store
