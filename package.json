@@ -1,7 +1,7 @@
 {
   "name": "fxnjs",
-  "version": "0.0.1",
-  "description": "Edge and cloud prediction functions for JavaScript and Node.js AI apps.",
+  "version": "0.0.2",
+  "description": "AI prediction functions for JavaScript and Node.js apps.",
   "scripts": {
     "build": "npm run clean && echo Using TypeScript && tsc --version && tsc --pretty",
     "test": "TS_NODE_PROJECT=tsconfig.test.json npx mocha --loader=ts-node/esm --experimental-specifier-resolution=node --require dotenv/config --colors --recursive --timeout 999999 test/**/*.ts",

@@ -3,4 +3,4 @@
 *   Copyright © 2023 NatML Inc. All Rights Reserved.
 */
 
-export * from "./api"
+export * from "./client"
