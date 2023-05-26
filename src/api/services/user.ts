@@ -88,12 +88,12 @@ export class UserService {
 
 export const PROFILE_FIELDS = `
 username
-created
 name
 avatar
 bio
 website
 github
+created
 `;
 
 export const USER_FIELDS = `

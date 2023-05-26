@@ -215,16 +215,42 @@ export class PredictorService {
     }
 }
 
+export const PARAMETER_FIELDS = `
+name
+type
+description
+range
+optional
+stringDefault
+floatDefault
+intDefault
+boolDefault
+`;
+
+export const SIGNATURE_FIELDS = `
+inputs {
+    ${PARAMETER_FIELDS}
+}
+outputs {
+    ${PARAMETER_FIELDS}
+}
+`;
+
 export const PREDICTOR_FIELDS = `
 tag
 owner {
     ${PROFILE_FIELDS}
 }
 name
+type
 description
 status
 access
 created
 media
+acceleration
+signature {
+    ${SIGNATURE_FIELDS}
+}
 license
 `;
