@@ -108,10 +108,6 @@ export interface Predictor {
      */
     access: AccessMode;
     /**
-     * Predictor topics.
-     */
-    topics: string[];
-    /**
      * Date created.
      */
     created: Date;

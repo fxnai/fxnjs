@@ -5,6 +5,7 @@
 
 import { GraphClient } from "../graph"
 import { Acceleration, AccessMode, Predictor, PredictorStatus, PredictorType } from "../types"
+import { PROFILE_FIELDS } from "./user"
 
 export interface RetrievePredictorInput {
     /**
@@ -78,17 +79,13 @@ export interface CreatePredictorInput {
      */
     acceleration?: Acceleration;
     /**
-     * Predictor license.
-     */
-    license?: string;
-    /**
-     * Predictor topics.
-     */
-    topics?: string[];
-    /**
      * Predictor media URL.
      */
     media?: string;
+    /**
+     * Predictor license URL.
+     */
+    license?: string;
 }
 
 export interface DeletePredictorInput {
@@ -108,26 +105,6 @@ export interface ArchivePredictorInput {
 export class PredictorService {
 
     private readonly client: GraphClient;
-    private readonly FIELDS = `
-    tag
-    owner {
-        username
-        created
-        name
-        avatar
-        bio
-        website
-        github
-    }
-    name
-    description
-    status
-    access
-    license
-    topics
-    created
-    media
-    `;
 
     public constructor (client: GraphClient) {
         this.client = client;
@@ -142,7 +119,7 @@ export class PredictorService {
         const { data: { predictor } } = await this.client.query<{ predictor: Predictor }>(
             `query ($input: PredictorInput!) {
                 predictor (input: $input) {
-                    ${this.FIELDS}
+                    ${PREDICTOR_FIELDS}
                 }
             }`,
             { input }
@@ -161,7 +138,7 @@ export class PredictorService {
                 user {
                     ... on User {
                         predictors (input: $input) {
-                            ${this.FIELDS}
+                            ${PREDICTOR_FIELDS}
                         }
                     }
                 }
@@ -180,7 +157,7 @@ export class PredictorService {
         const { data: { predictors } } = await this.client.query<{ predictors: Predictor[] }>(
             `query ($input: PredictorsInput!) {
                 predictors (input: $input) {
-                    ${this.FIELDS}
+                    ${PREDICTOR_FIELDS}
                 }
             }`,
             { input }
@@ -197,7 +174,7 @@ export class PredictorService {
         const { data: { predictor } } = await this.client.query<{ predictor: Predictor }>(
             `mutation ($input: CreatePredictorInput!) {
                 predictor: createPredictor (input: $input) {
-                    ${this.FIELDS}
+                    ${PREDICTOR_FIELDS}
                 }
             }`,
             { input }
@@ -229,7 +206,7 @@ export class PredictorService {
         const { data: { predictor } } = await this.client.query<{ predictor: Predictor }>(
             `mutation ($input: ArchivePredictorInput!) {
                 archivePredictor (input: $input) {
-                    ${this.FIELDS}
+                    ${PREDICTOR_FIELDS}
                 }
             }`,
             { input }
@@ -237,3 +214,17 @@ export class PredictorService {
         return predictor;
     }
 }
+
+export const PREDICTOR_FIELDS = `
+tag
+owner {
+    ${PROFILE_FIELDS}
+}
+name
+description
+status
+access
+created
+media
+license
+`;

@@ -43,18 +43,6 @@ export interface UpdateUserInput {
 export class UserService {
 
     private readonly client: GraphClient;
-    private readonly PROFILE_FIELDS = `
-    username
-    created
-    name
-    avatar
-    bio
-    website
-    github
-    `;
-    private readonly USER_FIELDS = `
-    email
-    `
 
     public constructor (client: GraphClient) {
         this.client = client;
@@ -70,8 +58,8 @@ export class UserService {
         const { data: { user } } = await this.client.query<{ user: Profile | User }>(
             `query ($input: UserInput) {
                 user (input: $input) {
-                    ${this.PROFILE_FIELDS}
-                    ${username ? "" : this.USER_FIELDS}
+                    ${PROFILE_FIELDS}
+                    ${username ? "" : USER_FIELDS}
                 }
             }`,
             { input }
@@ -88,8 +76,8 @@ export class UserService {
         const { data: { user } } = await this.client.query<{ user: User }>(
             `mutation ($input: UpdateUserInput!) {
                 user: updateUser (input: $input) {
-                    ${this.PROFILE_FIELDS}
-                    ${this.USER_FIELDS}
+                    ${PROFILE_FIELDS}
+                    ${USER_FIELDS}
                 }
             }`,
             { input }
@@ -97,3 +85,17 @@ export class UserService {
         return user;
     }
 }
+
+export const PROFILE_FIELDS = `
+username
+created
+name
+avatar
+bio
+website
+github
+`;
+
+export const USER_FIELDS = `
+email
+`;
