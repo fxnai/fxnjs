@@ -109,22 +109,10 @@ export class PredictionService {
     public async create (input: CreatePredictionInput): Promise<CloudPrediction | EdgePrediction> {
         const { tag, inputs: rawInputs, features, rawOutputs, dataUrlLimit } = input;
         const inputs = rawInputs ? Object.entries(rawInputs).map(([name, value]) => createInputFeature(name, value)) : features;
-        const extraFields = rawOutputs ? "" : "stringValue floatValue floatArray intValue intArray boolValue boolArray listValue dictValue";
         const { data: { prediction: { results: rawResults, ...prediction } } } = await this.client.query<{ prediction: Omit<Prediction, "results"> & { results?: OutputFeature[] } }>(
             `mutation ($input: CreatePredictionInput!) {
                 prediction: createPrediction (input: $input) {
-                    id
-                    tag
-                    created
-                    results {
-                        data
-                        type
-                        shape
-                        ${extraFields}
-                    }
-                    latency
-                    error
-                    logs
+                    ${rawOutputs ? PREDICTION_FIELDS_RAW : PREDICTION_FIELDS}
                 }
             }`,
             { input: { tag, inputs, client, dataUrlLimit } }
@@ -147,3 +135,54 @@ function createInputFeature (name: string, value: FeatureValue): FeatureInput {
 }
 
 const client = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ? "unknown" : "webworker" : "node" : "deno" : "browser";
+
+const CLOUD_PREDICTION_FIELDS_RAW = `
+results {
+    data
+    type
+    shape
+}
+latency
+error
+logs
+`;
+
+const CLOUD_PREDICTION_FIELDS = `
+results {
+    data
+    type
+    shape
+    stringValue
+    floatValue
+    floatArray
+    intValue
+    intArray
+    boolValue
+    boolArray
+    listValue
+    dictValue
+}
+latency
+error
+logs
+`;
+
+export const PREDICTION_FIELDS = `
+id
+tag
+type
+created
+... on CloudPrediction {
+    ${CLOUD_PREDICTION_FIELDS}
+}
+`;
+
+export const PREDICTION_FIELDS_RAW = `
+id
+tag
+type
+created
+... on CloudPrediction {
+    ${CLOUD_PREDICTION_FIELDS_RAW}
+}
+`;

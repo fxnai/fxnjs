@@ -215,27 +215,6 @@ export class PredictorService {
     }
 }
 
-export const PARAMETER_FIELDS = `
-name
-type
-description
-range
-optional
-stringDefault
-floatDefault
-intDefault
-boolDefault
-`;
-
-export const SIGNATURE_FIELDS = `
-inputs {
-    ${PARAMETER_FIELDS}
-}
-outputs {
-    ${PARAMETER_FIELDS}
-}
-`;
-
 export const PREDICTOR_FIELDS = `
 tag
 owner {
@@ -250,7 +229,22 @@ created
 media
 acceleration
 signature {
-    ${SIGNATURE_FIELDS}
+    inputs {
+        name
+        type
+        description
+        range
+        optional
+        stringDefault
+        floatDefault
+        intDefault
+        boolDefault
+    }
+    outputs {
+        name
+        type
+        description
+    }
 }
 license
 `;
