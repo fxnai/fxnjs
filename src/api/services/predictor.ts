@@ -54,19 +54,15 @@ export interface CreatePredictorInput {
      */
     tag: string;
     /**
-     * Predictor type.
-     */
-    type: PredictorType;
-    /**
      * Notebook URL.
      * This MUST be a `NOTEBOOK` upload URL.
      */
     notebook: string;
     /**
-     * Predictor description.
-     * This supports Markdown.
+     * Predictor type.
+     * This defaults to `CLOUD`.
      */
-    description?: string;
+    type?: PredictorType;
     /**
      * Predictor access mode.
      * This defaults to `PUBLIC`.
@@ -78,6 +74,11 @@ export interface CreatePredictorInput {
      * This defaults to `CPU`.
      */
     acceleration?: Acceleration;
+    /**
+     * Predictor description.
+     * This supports Markdown.
+     */
+    description?: string;
     /**
      * Predictor media URL.
      */
