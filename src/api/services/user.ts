@@ -59,7 +59,7 @@ export class UserService {
             `query ($input: UserInput) {
                 user (input: $input) {
                     ${PROFILE_FIELDS}
-                    ${username ? "" : USER_FIELDS}
+                    ${!username ? USER_FIELDS : ""}
                 }
             }`,
             { input }
@@ -97,5 +97,7 @@ created
 `;
 
 export const USER_FIELDS = `
-email
+... on User {
+    email
+}
 `;
