@@ -4,7 +4,7 @@
 */
 
 import { GraphClient } from "./graph"
-import { PredictionService, PredictorService, StorageService, UserService } from "./services"
+import { EnvironmentVariableService, PredictionService, PredictorService, StorageService, UserService } from "./services"
 
 export interface FunctionConfig {
     /**
@@ -44,6 +44,11 @@ export class Function {
     public readonly predictions: PredictionService;
 
     /**
+     * Manage predictor environment variables.
+     */
+    public readonly environmentVariables: EnvironmentVariableService;
+
+    /**
      * Upload and download files.
      */
     public readonly storage: StorageService;
@@ -57,6 +62,7 @@ export class Function {
         this.users = new UserService(this.client);
         this.predictors = new PredictorService(this.client);
         this.predictions = new PredictionService(this.client);
+        this.environmentVariables = new EnvironmentVariableService(this.client);
         this.storage = new StorageService(this.client);
     }
 }

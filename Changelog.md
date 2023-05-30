@@ -1,5 +1,7 @@
 ## 0.0.4
-*INCOMPLETE*
++ Added `EnvironmentVariable` type for managing predictor environment variables.
++ Added `Function.environmentVariables` service for managing global predictor environment variables.
++ Added `CreatePredictorInput.overwrite` input field for overwriting an existing predictor with the same tag.
 
 ## 0.0.3
 + Removed `Predictor.topics` field.

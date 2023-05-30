@@ -4,7 +4,7 @@
 */
 
 import { GraphClient } from "../graph"
-import { Acceleration, AccessMode, Predictor, PredictorStatus, PredictorType } from "../types"
+import { Acceleration, AccessMode, EnvironmentVariable, Predictor, PredictorStatus, PredictorType } from "../types"
 import { PROFILE_FIELDS } from "./user"
 
 export interface RetrievePredictorInput {
@@ -75,6 +75,10 @@ export interface CreatePredictorInput {
      */
     acceleration?: Acceleration;
     /**
+     * Predictor environment variables.
+     */
+    environment?: EnvironmentVariable[];
+    /**
      * Predictor description.
      * This supports Markdown.
      */
@@ -87,6 +91,11 @@ export interface CreatePredictorInput {
      * Predictor license URL.
      */
     license?: string;
+    /**
+     * Overwrite any existing predictor with the same tag.
+     * Existing predictor will be deleted.
+     */
+    overwrite?: boolean;
 }
 
 export interface DeletePredictorInput {

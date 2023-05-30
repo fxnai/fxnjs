@@ -136,44 +136,29 @@ function createInputFeature (name: string, value: FeatureValue): FeatureInput {
 
 const client = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ? "unknown" : "webworker" : "node" : "deno" : "browser";
 
-const CLOUD_PREDICTION_FIELDS_RAW = `
-results {
-    data
-    type
-    shape
-}
-latency
-error
-logs
-`;
-
-const CLOUD_PREDICTION_FIELDS = `
-results {
-    data
-    type
-    shape
-    stringValue
-    floatValue
-    floatArray
-    intValue
-    intArray
-    boolValue
-    boolArray
-    listValue
-    dictValue
-}
-latency
-error
-logs
-`;
-
 export const PREDICTION_FIELDS = `
 id
 tag
 type
 created
 ... on CloudPrediction {
-    ${CLOUD_PREDICTION_FIELDS}
+    results {
+        data
+        type
+        shape
+        stringValue
+        floatValue
+        floatArray
+        intValue
+        intArray
+        boolValue
+        boolArray
+        listValue
+        dictValue
+    }
+    latency
+    error
+    logs
 }
 `;
 
@@ -183,6 +168,13 @@ tag
 type
 created
 ... on CloudPrediction {
-    ${CLOUD_PREDICTION_FIELDS_RAW}
+    results {
+        data
+        type
+        shape
+    }
+    latency
+    error
+    logs
 }
 `;
