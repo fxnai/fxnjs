@@ -1,3 +1,6 @@
+## 0.0.5
+*INCOMPLETE*
+
 ## 0.0.4
 + Added `EnvironmentVariable` type for managing predictor environment variables.
 + Added `Function.environmentVariables` service for managing global predictor environment variables.
