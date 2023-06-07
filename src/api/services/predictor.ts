@@ -65,7 +65,7 @@ export interface CreatePredictorInput {
     type?: PredictorType;
     /**
      * Predictor access mode.
-     * This defaults to `PUBLIC`.
+     * This defaults to `PRIVATE`.
      */
     access?: AccessMode;
     /**
@@ -142,7 +142,7 @@ export class PredictorService {
      * @param input Input arguments.
      * @returns Predictors.
      */
-    public async list (input?: ListPredictorsInput): Promise<Predictor[]> { // DEPLOY
+    public async list (input?: ListPredictorsInput): Promise<Predictor[]> { // INCOMPLETE // Org
         const { data: { user } } = await this.client.query<{ user: { predictors: Predictor[] } }>(
             `query ($input: PredictorOwnerPredictorsInput!) {
                 user {
