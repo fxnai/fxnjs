@@ -1,5 +1,6 @@
 ## 0.0.5
-*INCOMPLETE*
++ Fixed `Function.predictors.list` function raising errors.
++ Fixed `Function.storage.createUploadUrl` function raising errors.
 
 ## 0.0.4
 + Added `EnvironmentVariable` type for managing predictor environment variables.

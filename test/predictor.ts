@@ -16,15 +16,12 @@ class PredictorTest {
     public before () {
         should();
         use(chaiAsPromised);
-        this.fxn = new Function({
-            accessKey: process.env.ACCESS_KEY!,
-            url: process.env.API_URL
-        });
+        this.fxn = new Function({ accessKey: process.env.ACCESS_KEY, url: process.env.API_URL });
     }
 
     @mocha.test
     async "Should retrieve a valid predictor" () {
-        const tag = "@natsuite/mobilenet-v2";
+        const tag = "@natml/identity";
         const predictor = await this.fxn.predictors.retrieve({ tag });
         expect(predictor.tag).to.equal(tag);
     }
@@ -37,7 +34,7 @@ class PredictorTest {
 
     @mocha.test
     async "Should search active predictors" () {
-        const predictors = await this.fxn.predictors.search({ query: "face detection" });
+        const predictors = await this.fxn.predictors.search();
         expect(predictors.length).to.greaterThan(0);
     }
 
@@ -45,7 +42,7 @@ class PredictorTest {
     async "Should create a predictor" () {
         const tag = "@natml/js-test";
         const type = PredictorType.Cloud;
-        const notebook = "https://cdn.natml.ai"; // INCOMPLETE
+        const notebook = "https://fxnai.s3.amazonaws.com/notebooks/05d441948f1da5f2b49a1c/identity.ipynb";
         const predictor = await this.fxn.predictors.create({ tag, type, notebook });
         expect(predictor.tag).to.equal(tag);
     }

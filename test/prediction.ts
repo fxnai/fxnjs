@@ -16,19 +16,16 @@ class PredictionTest {
     public before () {
         should();
         use(chaiAsPromised);
-        this.fxn = new Function({
-            accessKey: process.env.ACCESS_KEY!,
-            url: process.env.API_URL
-        });
+        this.fxn = new Function({ accessKey: process.env.ACCESS_KEY, url: process.env.API_URL });
     }
 
     @mocha.test
     async "Should create a cloud prediction" () {
-        const tag = "@natml/discord-test@json";
-        const inputs = { name: "Yusuf" };
+        const tag = "@natml/identity";
+        const inputs = { name: "Yusuf", age: 24 };
         const prediction = await this.fxn.predictions.create({ tag, inputs }) as CloudPrediction;
-        const result = prediction.results?.[0] as { name: string, age: number };
-        expect(result.name).to.equal(`Yusuf`)
-        expect(result.age).to.equal(24);
+        const results = prediction.results;
+        expect(results?.[0]).to.equal(`Yusuf`)
+        expect(results?.[1]).to.equal(24);
     }
 }

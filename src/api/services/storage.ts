@@ -69,8 +69,8 @@ export class StorageService {
      */
     public async createUploadUrl (input: CreateUploadURLInput): Promise<string> {
         const { data: { url } } = await this.client.query<{ url: string }>(
-            `mutation ($input: CreateUploadURLInput!) {
-                url: createUploadURL (input: $input)
+            `mutation ($input: CreateUploadUrlInput!) {
+                url: createUploadUrl (input: $input)
             }`,
             { input }
         );

@@ -37,7 +37,7 @@ export interface SearchPredictorsInput {
     /**
      * Search query.
      */
-    query: string;
+    query?: string;
     /**
      * Pagination offset.
      */
@@ -142,30 +142,31 @@ export class PredictorService {
      * @param input Input arguments.
      * @returns Predictors.
      */
-    public async list (input?: ListPredictorsInput): Promise<Predictor[]> { // INCOMPLETE // Org
+    public async list (input?: ListPredictorsInput): Promise<Predictor[]> {
+        const { owner: username, ...predictors } = input ?? { };
         const { data: { user } } = await this.client.query<{ user: { predictors: Predictor[] } }>(
-            `query ($input: PredictorOwnerPredictorsInput!) {
-                user {
+            `query ($user: UserInput, $predictors: UserPredictorsInput) {
+                user (input: $user) {
                     ... on User {
-                        predictors (input: $input) {
+                        predictors (input: $predictors) {
                             ${PREDICTOR_FIELDS}
                         }
                     }
                 }
             }`,
-            { input: input ?? { } }
+            { user: username && { username }, predictors }
         );
         return user?.predictors;
     }
 
     /**
-     * Search predictors.
+     * Search active predictors.
      * @param input Input arguments
      * @returns Predictors.
      */
-    public async search (input: SearchPredictorsInput): Promise<Predictor[]> {
+    public async search (input?: SearchPredictorsInput): Promise<Predictor[]> {
         const { data: { predictors } } = await this.client.query<{ predictors: Predictor[] }>(
-            `query ($input: PredictorsInput!) {
+            `query ($input: PredictorsInput) {
                 predictors (input: $input) {
                     ${PREDICTOR_FIELDS}
                 }
