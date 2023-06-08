@@ -95,11 +95,6 @@ export interface Predictor {
      */
     type: PredictorType;
     /**
-     * Predictor description.
-     * This supports Markdown.
-     */
-    description: string;
-    /**
      * Predictor status.
      */
     status: PredictorStatus;
@@ -112,15 +107,23 @@ export interface Predictor {
      */
     created: Date;
     /**
-     * Predictor acceleration.
-     * This only applies to `CLOUD` predictors.
+     * Predictor description.
      */
-    acceleration?: Acceleration;
+    description?: string;
+    /**
+     * Predictor readme.
+     */
+    readme?: string;
     /**
      * Predictor media URL.
      * We encourage animated GIF's where possible.
      */
     media?: string;
+    /**
+     * Predictor acceleration.
+     * This only applies to `CLOUD` predictors.
+     */
+    acceleration?: Acceleration;
     /**
      * Predictor signature.
      */
