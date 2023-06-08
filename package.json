@@ -1,7 +1,7 @@
 {
   "name": "fxnjs",
-  "version": "0.0.5",
-  "description": "AI prediction functions for JavaScript and Node.js apps.",
+  "version": "0.0.6",
+  "description": "Run AI prediction functions in your JavaScript and Node.js apps.",
   "scripts": {
     "build": "npm run clean && echo Using TypeScript && tsc --version && tsc --pretty",
     "test": "TS_NODE_PROJECT=tsconfig.test.json npx mocha --loader=ts-node/esm --experimental-specifier-resolution=node --require dotenv/config --colors --recursive --timeout 999999 test/**/*.ts",

@@ -1,3 +1,6 @@
+## 0.0.6
+*INCOMPLETE*
+
 ## 0.0.5
 + Fixed `Function.predictors.list` function raising errors.
 + Fixed `Function.storage.createUploadUrl` function raising errors.
