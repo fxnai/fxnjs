@@ -1,3 +1,6 @@
+## 0.0.7
+*INCOMPLETE*
+
 ## 0.0.6
 + Added `Predictor.predictions` field for inspecting the number of predictions made with a predictor.
 + Added `Predictor.readme` field for inspecting the predictor README from the predictor notebook.
