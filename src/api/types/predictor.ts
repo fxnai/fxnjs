@@ -103,6 +103,10 @@ export interface Predictor {
      */
     access: AccessMode;
     /**
+     * Number of predictions made with this predictor.
+     */
+    predictions: number;
+    /**
      * Date created.
      */
     created: Date;

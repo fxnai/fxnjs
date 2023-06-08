@@ -69,6 +69,15 @@ export interface CreatePredictorInput {
      */
     access?: AccessMode;
     /**
+     * Predictor description.
+     * This must be under 200 characters long.
+     */
+    description?: string;
+    /**
+     * Predictor media URL.
+     */
+    media?: string;
+    /**
      * Predictor acceleration.
      * This only applies for `CLOUD` predictors.
      * This defaults to `CPU`.
@@ -78,10 +87,6 @@ export interface CreatePredictorInput {
      * Predictor environment variables.
      */
     environment?: EnvironmentVariable[];
-    /**
-     * Predictor media URL.
-     */
-    media?: string;
     /**
      * Predictor license URL.
      */
@@ -228,10 +233,12 @@ owner {
 }
 name
 type
-description
 status
 access
+predictions
 created
+description
+readme
 media
 acceleration
 signature {
@@ -252,5 +259,6 @@ signature {
         description
     }
 }
+error
 license
 `;

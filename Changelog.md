@@ -1,5 +1,7 @@
 ## 0.0.6
-+ Removed `CreatePredictorInput.description` input field. Descriptions are now extracted from predictor notebooks.
++ Added `Predictor.predictions` field for inspecting the number of predictions made with a predictor.
++ Added `Predictor.readme` field for inspecting the predictor README from the predictor notebook.
++ Fixed `Predictor.error` field not being populated for `INVALID` predictors.
 
 ## 0.0.5
 + Fixed `Function.predictors.list` function raising errors.
