@@ -1,5 +1,5 @@
 ## 0.0.6
-*INCOMPLETE*
++ Removed `CreatePredictorInput.description` input field. Descriptions are now extracted from predictor notebooks.
 
 ## 0.0.5
 + Fixed `Function.predictors.list` function raising errors.

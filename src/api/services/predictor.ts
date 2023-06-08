@@ -18,7 +18,7 @@ export interface ListPredictorsInput {
     /**
      * Predictor status.
      */
-    status: PredictorStatus;
+    status?: PredictorStatus;
     /**
      * Predictor owner username.
      */
@@ -78,11 +78,6 @@ export interface CreatePredictorInput {
      * Predictor environment variables.
      */
     environment?: EnvironmentVariable[];
-    /**
-     * Predictor description.
-     * This supports Markdown.
-     */
-    description?: string;
     /**
      * Predictor media URL.
      */
