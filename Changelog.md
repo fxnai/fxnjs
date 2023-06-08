@@ -1,5 +1,5 @@
 ## 0.0.7
-*INCOMPLETE*
++ Renamed `Dtype.3d` data type to `model`.
 
 ## 0.0.6
 + Added `Predictor.predictions` field for inspecting the number of predictions made with a predictor.
