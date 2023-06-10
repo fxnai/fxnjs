@@ -184,19 +184,25 @@ export interface Parameter {
      */
     range?: [number, number];
     /**
-     * Parameter default string value.
+     * Parameter value choices for enumeration parameters.
      */
-    stringDefault?: string;
+    enumeration?: EnumerationMember;
     /**
-     * Parameter default float value.
+     * Parameter default value.
      */
-    floatDefault?: number;
+    defaultValue?: string | number | boolean;
+}
+
+/**
+ * Prediction parameter enumeration member.
+ */
+export interface EnumerationMember {
     /**
-     * Parameter default integer value.
+     * Enumeration member name.
      */
-    intDefault?: number;
+    name: string;
     /**
-     * Parameter default boolean value.
+     * Enumeration member value.
      */
-    boolDefault?: boolean;
+    value: string | number;
 }

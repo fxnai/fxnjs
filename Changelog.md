@@ -1,5 +1,12 @@
 ## 0.0.7
++ Added `EnumerationMember` class for working with parameters that are enumeration values.
++ Added `Parameter.enumeration` field for inspecting parameters which hold enumeration values.
++ Added `Parameter.defaultValue` field for inspecting the default value of a predictor parameter.
 + Renamed `Dtype.3d` data type to `model`.
++ Removed `Parameter.stringDefault` field. Use `Parameter.defaultValue` field instead.
++ Removed `Parameter.intDefault` field. Use `Parameter.defaultValue` field instead.
++ Removed `Parameter.floatDefault` field. Use `Parameter.defaultValue` field instead.
++ Removed `Parameter.boolDefault` field. Use `Parameter.defaultValue` field instead.
 
 ## 0.0.6
 + Added `Predictor.predictions` field for inspecting the number of predictions made with a predictor.
