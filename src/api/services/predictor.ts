@@ -248,10 +248,11 @@ signature {
         description
         range
         optional
-        stringDefault
-        floatDefault
-        intDefault
-        boolDefault
+        enumeration {
+            name
+            value
+        }
+        defaultValue
     }
     outputs {
         name
