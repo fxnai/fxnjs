@@ -6,6 +6,11 @@
 import { Dtype } from "./dtype"
 
 /**
+ * Plain feature value.
+ */
+export type FeatureValue = string | number | number[] | boolean | boolean[] | (string | number | boolean)[] | { [key: string]: any };
+
+/**
  * Prediction feature.
  */
 export interface Feature {

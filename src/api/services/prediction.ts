@@ -3,69 +3,30 @@
 *   Copyright © 2023 NatML Inc. All Rights Reserved.
 */
 
+import axios from "axios"
 import { isBrowser, isDeno, isNode, isWebWorker } from "browser-or-node"
+import { randomUUID } from "crypto"
+import parseDataURL from "data-urls"
 import { GraphClient } from "../graph"
-import { CloudPrediction, EdgePrediction, Feature, FeatureValue, Prediction } from "../types"
+import { CloudPrediction, Dtype, EdgePrediction, Feature, FeatureValue, Prediction, UploadType } from "../types"
+import { StorageService } from "./storage"
 
-export type ParameterInput =  { [key: string]: FeatureValue };
-
-/**
- * We hide this from devs.
- */
-interface OutputFeature extends Feature {
-    /**
-     * Feature data as a `string`.
-     * This is a convenience property and is only populated for `string` features.
-     */
-    stringValue?: string;
-    /**
-     * Feature data as a `float`.
-     * This is a convenience property and is only populated for `float32` or `float64` scalar features.
-     */
-    floatValue?: number;
-    /**
-     * Feature data as a flattened `float` array.
-     * This is a convenience property and is only populated for `float32` tensor features.
-     */
-    floatArray?: number[];
-    /**
-     * Feature data as an integer.
-     * This is a convenience property and is only populated for integer scalar features.
-    */
-    intValue?: number;
-    /**
-     * Feature data as a flattened `int32` array.
-     * This is a convenience property and is only populated for `int32` tensor features.
-    */
-    intArray?: number[];
-    /**
-     * Feature data as a boolean.
-     * This is a convenience property and is only populated for `bool` scalar features.
-    */
-    boolValue?: boolean;
-    /**
-     * Feature data as a flattened boolean array.
-     * This is a convenience property and is only populated for `bool` tensor features.
-     */
-    boolArray?: boolean[];
-    /**
-     * Feature data as a list.
-     * This is a convenience property and is only populated for `list` features.
-     */
-    listValue?: any[];
-    /**
-     * Feature data as a dictionary.
-     * This is a convenience property and is only populated for `dict` features.
-     */
-    dictValue: { [key: string]: any };
+export const PREDICTION_FIELDS = `
+id
+tag
+type
+created
+... on CloudPrediction {
+    results {
+        data
+        type
+        shape
+    }
+    latency
+    error
+    logs
 }
-
-export interface FeatureInput extends Partial<OutputFeature> {
-    /**
-     * Feature name.
-     */
-    name: string;
-}
+`;
 
 export interface CreatePredictionInput {
     /**
@@ -76,12 +37,7 @@ export interface CreatePredictionInput {
      * Input features.
      * This is mutually exclusive with `features`.
      */
-    inputs?: ParameterInput;
-    /**
-     * Input features.
-     * This is mutually exclusive with `inputs`.
-     */
-    features?: FeatureInput[];
+    inputs?: { [key: string]: FeatureValue | Feature };
     /**
      * Do not populate convenience fields in output features.
      * This defaults to `false`.
@@ -96,9 +52,11 @@ export interface CreatePredictionInput {
 export class PredictionService {
 
     private readonly client: GraphClient;
+    private readonly storage: StorageService;
 
-    public constructor (client: GraphClient) {
+    public constructor (client: GraphClient, storage: StorageService) {
         this.client = client;
+        this.storage = storage;
     }
 
     /**
@@ -107,74 +65,157 @@ export class PredictionService {
      * @returns Prediction.
      */
     public async create (input: CreatePredictionInput): Promise<CloudPrediction | EdgePrediction> {
-        const { tag, inputs: rawInputs, features, rawOutputs, dataUrlLimit } = input;
-        const inputs = rawInputs ? Object.entries(rawInputs).map(([name, value]) => createInputFeature(name, value)) : features;
-        const { data: { prediction: { results: rawResults, ...prediction } } } = await this.client.query<{ prediction: Omit<Prediction, "results"> & { results?: OutputFeature[] } }>(
+        const { tag, inputs: rawInputs, rawOutputs, dataUrlLimit } = input;
+        const minUploadSize = 4096;
+        const key = randomUUID();
+        const inputs = rawInputs ? 
+            await Promise.all(Object.entries(rawInputs)
+                .map(([name, value]) => featureFromValue({ storage: this.storage, value, name, minUploadSize, key })
+                .then(f => ({ ...f, name })))
+            ) : null;
+        const { data: { prediction: { results: rawResults, ...others } } } = await this.client.query<{ prediction: CloudPrediction & EdgePrediction }>(
             `mutation ($input: CreatePredictionInput!) {
                 prediction: createPrediction (input: $input) {
-                    ${rawOutputs ? PREDICTION_FIELDS_RAW : PREDICTION_FIELDS}
+                    ${PREDICTION_FIELDS}
                 }
             }`,
             { input: { tag, inputs, client, dataUrlLimit } }
         );
-        const results = rawResults?.map(({ data, type, shape, stringValue, floatValue, floatArray, intValue, intArray, boolValue, boolArray, listValue, dictValue }) => {
-            return stringValue ?? floatValue ?? floatArray ?? intValue ?? intArray ?? boolValue ?? boolArray ?? listValue ?? dictValue ?? { data, type, shape };
-        });
-        return { ...prediction, results };
-    }
-}
-
-function createInputFeature (name: string, value: FeatureValue): FeatureInput {
-    switch (typeof value) {
-        case "string":  return { name, stringValue: value };
-        case "number":  return Number.isInteger(value) ? { name, floatValue: value } : { name, intValue: value };
-        case "boolean": return { name, boolValue: value };
-        case "object":  return { name, dictValue: value };
-        default:        throw new Error(`Cannot create input feature from value of type '${typeof value}'`);
+        const results = rawResults && !rawOutputs ?
+            await Promise.all(rawResults.map(feature => featureToValue({ feature: feature as Feature }))) :
+            rawResults;
+        const prediction = rawResults !== undefined ? { ...others, results } : others;
+        return prediction;
     }
 }
 
 const client = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ? "unknown" : "webworker" : "node" : "deno" : "browser";
 
-export const PREDICTION_FIELDS = `
-id
-tag
-type
-created
-... on CloudPrediction {
-    results {
-        data
-        type
-        shape
-        stringValue
-        floatValue
-        floatArray
-        intValue
-        intArray
-        boolValue
-        boolArray
-        listValue
-        dictValue
-    }
-    latency
-    error
-    logs
+interface FeatureToValueInput {
+    feature: Feature;
 }
-`;
 
-export const PREDICTION_FIELDS_RAW = `
-id
-tag
-type
-created
-... on CloudPrediction {
-    results {
-        data
-        type
-        shape
-    }
-    latency
-    error
-    logs
+interface FeatureFromValueInput {
+    storage: StorageService;
+    value: FeatureValue | Feature;
+    name: string;
+    minUploadSize?: number;
+    key?: string;
 }
-`;
+
+async function featureToValue (input: FeatureToValueInput): Promise<Feature | FeatureValue> {
+    const { feature } = input;
+    const buffer = await getFeatureData(feature.data);
+    const view = new DataView(buffer);
+    switch (feature.type) {
+        case "int8":    return arrayFeatureToValue(feature, offset => view.getInt8(offset));
+        case "int16":   return arrayFeatureToValue(feature, offset => view.getInt16(offset, true));
+        case "int32":   return arrayFeatureToValue(feature, offset => view.getInt32(offset, true));
+        case "int64":   return arrayFeatureToValue(feature, offset => view.getBigInt64(offset, true) as unknown as number);
+        case "uint8":   return arrayFeatureToValue(feature, offset => view.getUint8(offset));
+        case "uint16":  return arrayFeatureToValue(feature, offset => view.getUint16(offset, true));
+        case "uint32":  return arrayFeatureToValue(feature, offset => view.getUint32(offset, true));
+        case "uint64":  return arrayFeatureToValue(feature, offset => view.getBigUint64(offset, true) as unknown as number);
+        case "float32": return arrayFeatureToValue(feature, offset => view.getFloat32(offset, true));
+        case "float64": return arrayFeatureToValue(feature, offset => view.getFloat64(offset, true));
+        case "bool":    return numberToBoolean(arrayFeatureToValue(feature, offset => view.getUint8(offset)));
+        case "string":  return new TextDecoder().decode(view);
+        case "list":    return JSON.parse(new TextDecoder().decode(view));
+        case "dict":    return JSON.parse(new TextDecoder().decode(view));
+    }
+    return feature;
+}
+
+async function featureFromValue (input: FeatureFromValueInput): Promise<Feature> {
+    const { storage, value, name, minUploadSize: dataUrlLimit, key } = input;
+    // Feature
+    if (isFeature(value))
+        return value;
+    // Array
+    if (Array.isArray(value)) {
+        const isHomogenous = value.every(v => typeof(v) === typeof(value[0]));
+        const isBoolTensor = isHomogenous && typeof(value[0]) === "boolean";
+        const isIntTensor = isHomogenous && typeof(value[0]) === "number" && Number.isInteger(value[0]);
+        const isFloatTensor = isHomogenous && typeof(value[0]) === "number" && !isIntTensor;
+        const boolBuffer = isBoolTensor ? new Uint8Array(value.map(v => +v)).buffer : null;
+        const intBuffer = isIntTensor ? new Int32Array(value as number[]).buffer : null;
+        const floatBuffer = isFloatTensor ? new Float32Array(value as number[]).buffer : null;
+        const buffer = boolBuffer ?? intBuffer ?? floatBuffer ?? new TextEncoder().encode(JSON.stringify(value)).buffer;
+        const data = await storage.upload({ name, buffer, type: UploadType.Feature, dataUrlLimit, key });
+        const type = !isBoolTensor ? !isFloatTensor ? !isIntTensor ? "list" : "int32" : "float32" : "bool";
+        const shape = [value.length];
+        return { data, type, shape };
+    }
+    // String
+    if (typeof(value) === "string") {
+        const buffer = new TextEncoder().encode(value).buffer;
+        const data = await storage.upload({ name, buffer, type: UploadType.Feature, dataUrlLimit, key });
+        return { data, type: "string" };
+    }
+    // Boolean
+    if (typeof(value) === "boolean") {
+        const buffer = new Uint8Array([ +value ]).buffer;
+        const data = await storage.upload({ name, buffer, type: UploadType.Feature, dataUrlLimit, key });
+        return { data, type: "bool", shape: [] };
+    }
+    // Integer
+    if (typeof(value) === "number") {
+        const isInt = Number.isInteger(value);
+        const buffer = isInt ? new Int32Array([ value as number ]).buffer : new Float32Array([ value as number ]).buffer;
+        const data = await storage.upload({ name, buffer, type: UploadType.Feature, dataUrlLimit, key });
+        return { data, type: isInt ? "int32" : "float32", shape: [] };
+    }
+    // Dict
+    if (typeof(value) === "object") {
+        const serializedValue = JSON.stringify(value);
+        const buffer = new TextEncoder().encode(serializedValue).buffer;
+        const data = await storage.upload({ name, buffer, type: UploadType.Feature, dataUrlLimit, key });
+        return { data, type: "dict" };
+    }
+    // Throw
+    throw new Error(`Input value ${value} of type ${typeof(value)} cannot be used as prediction input`);
+}
+
+async function getFeatureData (url: string): Promise<ArrayBuffer> {
+    // Data URL
+    if (url.startsWith("data:"))
+        return (parseDataURL(url).body as Uint8Array).buffer
+    // Download
+    const response = await axios.get(url, { responseType: "arraybuffer" });
+    return response.data as ArrayBuffer;
+}
+
+function arrayFeatureToValue (feature: Feature, reader: (offset: number) => number): number | number[] {
+    const { type, shape } = feature;
+    const scalar = shape.length === 0;
+    const length = !scalar ? shape.reduce((a, b) => a * b) : 1;
+    const bytesPerElement = getBytesPerElement(type);
+    const array = Array.from({ length }, (_, idx) => reader(idx * bytesPerElement));
+    return scalar ? array[0] : array;
+}
+
+function numberToBoolean (feature: number | number[]): boolean | boolean[] {
+    return Array.isArray(feature) ? feature.map(f => f !== 0) : feature !== 0;
+}
+
+function getBytesPerElement (dtype: Dtype): number {
+    switch (dtype) {
+        case "int8":    return Int8Array.BYTES_PER_ELEMENT;
+        case "int16":   return Int16Array.BYTES_PER_ELEMENT;
+        case "int32":   return Int32Array.BYTES_PER_ELEMENT;
+        case "int64":   return BigInt64Array.BYTES_PER_ELEMENT;
+        case "uint8":   return Uint8Array.BYTES_PER_ELEMENT;
+        case "uint16":  return Uint16Array.BYTES_PER_ELEMENT;
+        case "uint32":  return Uint32Array.BYTES_PER_ELEMENT;
+        case "uint64":  return BigUint64Array.BYTES_PER_ELEMENT;
+        case "float16": return Uint16Array.BYTES_PER_ELEMENT; // forward compatibility?
+        case "float32": return Float32Array.BYTES_PER_ELEMENT;
+        case "float64": return BigInt64Array.BYTES_PER_ELEMENT;
+        case "bool":    return Uint8Array.BYTES_PER_ELEMENT;
+        default:        return undefined;
+    }
+}
+
+function isFeature (feature: any): feature is Feature {
+    return feature.data && feature.type;
+}

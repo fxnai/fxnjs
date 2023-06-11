@@ -45,6 +45,10 @@ export interface UploadInput {
      * Return a data URL if the provided buffer is smaller than this limit (in bytes).
      */
     dataUrlLimit?: number;
+    /**
+     * Upload key
+     */
+    key?: string;
 }
 
 export interface DownloadInput {
@@ -83,12 +87,12 @@ export class StorageService {
      * @returns Uploaded file URL.
      */
     public async upload (input: UploadInput): Promise<string> {
-        const { name, buffer, type, mime = "application/octet-stream", dataUrlLimit = 0 } = input;
+        const { name, buffer, type, mime = "application/octet-stream", dataUrlLimit = 0, key } = input;
         // Handle data URL
         if (buffer.byteLength < dataUrlLimit)
             return `data:${mime};base64,${encode(buffer)}`;
         // Upload
-        const url = await this.createUploadUrl({ name, type });
+        const url = await this.createUploadUrl({ name, type, key });
         await axios.put(url, buffer, { headers: { "Content-Type": mime } });
         // Return
         return url;

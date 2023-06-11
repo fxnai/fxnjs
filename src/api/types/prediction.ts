@@ -3,12 +3,7 @@
 *   Copyright © 2023 NatML Inc. All Rights Reserved.
 */
 
-import { Feature } from "./feature"
-
-/**
- * Plain feature value.
- */
-export type FeatureValue = string | number | boolean | { [key: string]: any };
+import { Feature, FeatureValue } from "./feature"
 
 /**
  * Prediction.

@@ -1,5 +1,7 @@
 ## 0.0.8
-*INCOMPLETE*
++ Removed `CreatePredictionInput.features` input field. Use `CreatePredictionInput.inputs` input field instead.
++ Removed `PREDICTION_FIELDS_RAW` constant. Use `PREDICTION_FIELDS` constant instead.
++ Removed `ParameterInput` type.
 
 ## 0.0.7
 + Added `EnumerationMember` class for working with parameters that are enumeration values.
