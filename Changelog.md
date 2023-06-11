@@ -1,3 +1,6 @@
+## 0.0.9
+*INCOMPLETE*
+
 ## 0.0.8
 + Removed `CreatePredictionInput.features` input field. Use `CreatePredictionInput.inputs` input field instead.
 + Removed `PREDICTION_FIELDS_RAW` constant. Use `PREDICTION_FIELDS` constant instead.
