@@ -1,5 +1,5 @@
 ## 0.0.9
-*INCOMPLETE*
++ Fixed `crypto` exception when calling `Function.predictions.create` in a web browser.
 
 ## 0.0.8
 + Removed `CreatePredictionInput.features` input field. Use `CreatePredictionInput.inputs` input field instead.

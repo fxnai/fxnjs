@@ -5,7 +5,6 @@
 
 import axios from "axios"
 import { isBrowser, isDeno, isNode, isWebWorker } from "browser-or-node"
-import { randomUUID } from "crypto"
 import parseDataURL from "data-urls"
 import { GraphClient } from "../graph"
 import { CloudPrediction, Dtype, EdgePrediction, Feature, FeatureValue, Prediction, UploadType } from "../types"
@@ -67,8 +66,8 @@ export class PredictionService {
     public async create (input: CreatePredictionInput): Promise<CloudPrediction | EdgePrediction> {
         const { tag, inputs: rawInputs, rawOutputs, dataUrlLimit } = input;
         const minUploadSize = 4096;
-        const key = randomUUID();
-        const inputs = rawInputs ? 
+        const key = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2); // this doesn't have to be good
+        const inputs = rawInputs ?
             await Promise.all(Object.entries(rawInputs)
                 .map(([name, value]) => featureFromValue({ storage: this.storage, value, name, minUploadSize, key })
                 .then(f => ({ ...f, name })))
