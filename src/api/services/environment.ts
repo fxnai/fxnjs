@@ -74,7 +74,7 @@ export class EnvironmentVariableService {
             }`,
             { input }
         );
-        return user?.environmentVariables;
+        return user?.environmentVariables ?? null;
     }
 
     /**

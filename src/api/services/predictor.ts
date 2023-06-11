@@ -156,7 +156,7 @@ export class PredictorService {
             }`,
             { user: username && { username }, predictors }
         );
-        return user?.predictors;
+        return user?.predictors ?? null;
     }
 
     /**
