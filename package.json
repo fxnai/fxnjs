@@ -1,6 +1,6 @@
 {
   "name": "fxnjs",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Run AI prediction functions in your JavaScript and Node.js apps.",
   "scripts": {
     "build": "npm run clean && echo Using TypeScript && tsc --version && tsc --pretty",

@@ -1,2 +1,2 @@
-# Function JS
+# Function for JavaScript
 *Coming soon...*
