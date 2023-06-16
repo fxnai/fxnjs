@@ -252,7 +252,11 @@ signature {
             name
             value
         }
-        defaultValue
+        defaultValue {
+            data
+            type
+            shape
+        }
     }
     outputs {
         name

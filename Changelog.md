@@ -1,3 +1,7 @@
+## 0.0.10
++ Added `featureFromValue` function for creating a prediction feature from a JavaScript value.
++ Added `featureToValue` function for creating a JavaScript value from a prediction feature.
+
 ## 0.0.9
 + Fixed `crypto` exception when calling `Function.predictions.create` in a web browser.
 
