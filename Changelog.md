@@ -1,5 +1,5 @@
 ## 0.0.11
-*INCOMPLETE*
++ Fixed `Parameter.enumeration` field type to be `EnumerationMember[]` instead of `EnumerationMember`.
 
 ## 0.0.10
 + Added `featureFromValue` function for creating a prediction feature from a JavaScript value.

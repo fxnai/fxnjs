@@ -187,7 +187,7 @@ export interface Parameter {
     /**
      * Parameter value choices for enumeration parameters.
      */
-    enumeration?: EnumerationMember;
+    enumeration?: EnumerationMember[];
     /**
      * Parameter default value.
      */
