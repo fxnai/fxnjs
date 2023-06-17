@@ -4,6 +4,7 @@
 */
 
 import { Dtype } from "./dtype"
+import { Feature, FeatureValue } from "./feature"
 import { Profile } from "./profile"
 
 /**
@@ -190,7 +191,7 @@ export interface Parameter {
     /**
      * Parameter default value.
      */
-    defaultValue?: string | number | boolean;
+    defaultValue?: FeatureValue | Feature;
 }
 
 /**
