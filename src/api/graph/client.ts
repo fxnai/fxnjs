@@ -3,13 +3,8 @@
 *   Copyright © 2023 NatML Inc. All Rights Reserved.
 */
 
-import axios, { AxiosResponseHeaders } from "axios"
+import fetch from "cross-fetch"
 import { FunctionConfig } from "../client"
-
-interface GraphResponse<T> {
-    data?: { [key: string]: T };
-    errors?: { message: string; }[];
-}
 
 export interface GraphPayload<T> {
     /**
@@ -19,7 +14,7 @@ export interface GraphPayload<T> {
     /**
      * Response headers.
      */
-    headers: AxiosResponseHeaders;
+    headers: Headers;
 }
 
 /**
@@ -47,11 +42,13 @@ export class GraphClient {
      */
     public async query<T = any> (query: string, variables?: { [key: string]: any }): Promise<GraphPayload<T>> {
         // Request
-        const { data: { data, errors }, headers } = await axios.post<GraphResponse<T>>(
-            this.url,
-            { query, variables },
-            { headers: { Authorization: this.auth } }
-        );
+        const response = await fetch(this.url, {
+            method: "POST",
+            headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: this.auth },
+            body: JSON.stringify({ query, variables })
+        });
+        const { data, errors } = await response.json();
+        const headers = response.headers;
         // Check
         if (errors)
             throw new Error(errors[0].message);

@@ -1,4 +1,5 @@
 ## 0.0.11
++ Added support for Vercel Edge runtime.
 + Fixed `Parameter.enumeration` field type to be `EnumerationMember[]` instead of `EnumerationMember`.
 
 ## 0.0.10
