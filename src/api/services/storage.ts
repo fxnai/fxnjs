@@ -3,8 +3,8 @@
 *   Copyright © 2023 NatML Inc. All Rights Reserved.
 */
 
-import axios from "axios"
 import { decode, encode } from "base64-arraybuffer"
+import fetch from "cross-fetch"
 import { GraphClient } from "../graph"
 import { UploadType } from "../types"
 
@@ -93,7 +93,11 @@ export class StorageService {
             return `data:${mime};base64,${encode(buffer)}`;
         // Upload
         const url = await this.createUploadUrl({ name, type, key });
-        await axios.put(url, buffer, { headers: { "Content-Type": mime } });
+        await fetch(url, {
+            method: "PUT",
+            headers: { "Content-Type": mime, "Content-Length": buffer.byteLength.toString() },
+            body: buffer
+        });
         // Return
         return url;
     }
@@ -112,7 +116,8 @@ export class StorageService {
             return decode(b64);
         }
         // Download
-        const response = await axios.get<ArrayBuffer>(url, { responseType: "arraybuffer" });
-        return response.data;
+        const response = await fetch(url);
+        const buffer = await response.arrayBuffer();
+        return buffer;
     }
 }

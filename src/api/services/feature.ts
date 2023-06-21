@@ -3,7 +3,7 @@
 *   Copyright © 2023 NatML Inc. All Rights Reserved.
 */
 
-import axios from "axios"
+import fetch from "cross-fetch"
 import parseDataURL from "data-urls"
 import { Dtype, Feature, FeatureValue, UploadType } from "../types"
 import { StorageService } from "./storage"
@@ -113,8 +113,9 @@ async function getFeatureData (url: string): Promise<ArrayBuffer> {
     if (url.startsWith("data:"))
         return (parseDataURL(url).body as Uint8Array).buffer
     // Download
-    const response = await axios.get(url, { responseType: "arraybuffer" });
-    return response.data as ArrayBuffer;
+    const response = await fetch(url);
+    const buffer = await response.arrayBuffer();
+    return buffer;
 }
 
 function arrayFeatureToValue (feature: Feature, reader: (offset: number) => number): number | number[] {
