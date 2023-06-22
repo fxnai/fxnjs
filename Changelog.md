@@ -1,3 +1,6 @@
+## 0.0.13
++ Minor stability updates.
+
 ## 0.0.12
 + Minor stability updates.
 

@@ -3,7 +3,7 @@
 *   Copyright © 2023 NatML Inc. All Rights Reserved.
 */
 
-import fetch from "cross-fetch"
+//import fetch from "cross-fetch"
 import { FunctionConfig } from "../client"
 
 export interface GraphPayload<T> {
