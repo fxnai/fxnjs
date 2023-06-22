@@ -3,7 +3,6 @@
 *   Copyright © 2023 NatML Inc. All Rights Reserved.
 */
 
-//import fetch from "cross-fetch"
 import parseDataURL from "data-urls"
 import { Dtype, Feature, FeatureValue, UploadType } from "../types"
 import { StorageService } from "./storage"

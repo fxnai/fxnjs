@@ -4,7 +4,6 @@
 */
 
 import { decode, encode } from "base64-arraybuffer"
-//import fetch from "cross-fetch"
 import { GraphClient } from "../graph"
 import { UploadType } from "../types"
 
