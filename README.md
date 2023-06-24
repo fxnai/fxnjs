@@ -18,6 +18,8 @@ Head over to [fxn.ai](https://fxn.ai) to create an account by logging in. Once y
 ## Making a Prediction
 First, create a Function client and specify your access key:
 ```js
+import { Function } from "fxnjs"
+
 // Create a Function client
 const fxn = new Function({ accessKey: "<ACCESS KEY>" });
 ```
