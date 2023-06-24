@@ -1,5 +1,5 @@
 ## 0.0.14
-*INCOMPLETE*
++ Added UMD script for using Function without a bundler.
 
 ## 0.0.13
 + Minor stability updates.
