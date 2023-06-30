@@ -1,3 +1,6 @@
+## 0.0.16
+*INCOMPLETE*
+
 ## 0.0.15
 + Fixed `fxn.environmentVariables.list` method throwing error.
 
