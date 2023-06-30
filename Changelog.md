@@ -1,3 +1,6 @@
+## 0.0.15
++ Fixed `fxn.environmentVariables.list` method throwing error.
+
 ## 0.0.14
 + Added UMD script for using Function without a bundler.
 

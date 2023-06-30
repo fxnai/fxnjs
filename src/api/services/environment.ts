@@ -56,17 +56,17 @@ export class EnvironmentVariableService {
      * @param input Input arguments.
      * @returns Environment variables.
      */
-    public async list (input?: ListEnvironmentVariablesInput): Promise<EnvironmentVariable[]> { // DEPLOY
+    public async list (input?: ListEnvironmentVariablesInput): Promise<EnvironmentVariable[]> {
         const { data: { user } } = await this.client.query<{ user: { environmentVariables: EnvironmentVariable[] } }>(
             `query ($input: UserInput) {
                 user (input: $input) {
                     ... on User {
-                        environmentVariables (input: $input) {
+                        environmentVariables {
                             name
                         }
                     }
                     ... on Organization {
-                        environmentVariables (input: $input) {
+                        environmentVariables {
                             name
                         }
                     }
@@ -82,7 +82,7 @@ export class EnvironmentVariableService {
      * @param input Input arguments.
      * @returns Created environment variable.
      */
-    public async create (input: CreateEnvironmentVariableInput): Promise<EnvironmentVariable> { // DEPLOY
+    public async create (input: CreateEnvironmentVariableInput): Promise<EnvironmentVariable> {
         const { data: { environment } } = await this.client.query<{ environment: EnvironmentVariable }>(
             `mutation ($input: CreateEnvironmentVariableInput!) {
                 environment: createEnvironmentVariable (input: $input) {
@@ -99,7 +99,7 @@ export class EnvironmentVariableService {
      * @param input Input arguments.
      * @returns Whether environment variable was successfully deleted.
      */
-    public async delete (input: DeleteEnvironmentVariableInput): Promise<boolean> { // DEPLOY
+    public async delete (input: DeleteEnvironmentVariableInput): Promise<boolean> {
         const { data: { result } } = await this.client.query<{ result: boolean }>(
             `mutation ($input: DeleteEnvironmentVariableInput!) {
                 result: deleteEnvironmentVariable (input: $input)
