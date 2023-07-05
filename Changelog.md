@@ -1,3 +1,6 @@
+## 0.0.17
+*INCOMPLETE*
+
 ## 0.0.16
 + Added support for using `TypedArray` instances as prediction inputs and outputs.
 + Added `isFunctionValue` utility method for checking whether a `value` is a Function value.
