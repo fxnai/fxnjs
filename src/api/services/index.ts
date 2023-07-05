@@ -4,8 +4,8 @@
 */
 
 export * from "./environment"
-export * from "./feature"
 export * from "./prediction"
 export * from "./predictor"
 export * from "./storage"
 export * from "./user"
+export * from "./value"

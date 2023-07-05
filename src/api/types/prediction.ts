@@ -3,7 +3,7 @@
 *   Copyright © 2023 NatML Inc. All Rights Reserved.
 */
 
-import { Feature, FeatureValue } from "./feature"
+import { PlainValue, Value } from "./value"
 
 /**
  * Prediction.
@@ -30,7 +30,7 @@ export interface CloudPrediction extends Prediction {
     /**
      * Prediction results.
      */
-    results?: (Feature | FeatureValue)[];
+    results?: (Value | PlainValue)[];
     /**
      * Prediction latency in milliseconds.
      */

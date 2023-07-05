@@ -8,10 +8,6 @@
  */
 export enum UploadType {
     /**
-     * Prediction feature.
-     */
-    Feature = "FEATURE",
-    /**
      * Predictor media.
      */
     Media = "MEDIA",
@@ -19,4 +15,8 @@ export enum UploadType {
      * Predictor notebook.
      */
     Notebook = "NOTEBOOK",
+    /**
+     * Prediction value.
+     */
+    Value = "VALUE",
 }

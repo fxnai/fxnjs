@@ -4,7 +4,7 @@
 */
 
 /**
- * Feature data type.
+ * Value data type.
  */
 export type Dtype =
     "int8"      |

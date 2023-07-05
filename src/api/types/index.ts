@@ -5,10 +5,10 @@
 
 export * from "./dtype"
 export * from "./environment"
-export * from "./feature"
 export * from "./prediction"
 export * from "./predictor"
 export * from "./profile"
 export * from "./tag"
 export * from "./upload"
 export * from "./user"
+export * from "./value"

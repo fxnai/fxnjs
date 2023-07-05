@@ -4,7 +4,7 @@
 */
 
 import { Dtype } from "./dtype"
-import { Feature, FeatureValue } from "./feature"
+import { PlainValue, Value } from "./value"
 import { Profile } from "./profile"
 
 /**
@@ -160,7 +160,7 @@ export interface Signature {
 
 /**
  * Prediction parameter.
- * This describes a feature that is consumed or produced by a predictor.
+ * This describes a value that is consumed or produced by a predictor.
  */
 export interface Parameter {
     /**
@@ -191,7 +191,7 @@ export interface Parameter {
     /**
      * Parameter default value.
      */
-    defaultValue?: FeatureValue | Feature;
+    defaultValue?: PlainValue | Value;
 }
 
 /**

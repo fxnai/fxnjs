@@ -1,5 +1,11 @@
 ## 0.0.16
-*INCOMPLETE*
++ Added support for using `TypedArray` instances as prediction inputs and outputs.
++ Added `isFunctionValue` utility method for checking whether a `value` is a Function value.
++ Refactored `Feature` type to `Value` to improve clarity.
++ Refactored `FeatureValue` type to `PlainValue` to improve clarity.
++ Refactored `UploadType.Feature` enumeration member to `UploadType.Value`.
++ Refactored `featureFromValue` function to `toFunctionValue`.
++ Refactored `featureToValue` function to `toPlainValue`.
 
 ## 0.0.15
 + Fixed `fxn.environmentVariables.list` method throwing error.
