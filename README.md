@@ -4,7 +4,7 @@
 
 Run AI prediction functions (a.k.a "predictors") in the browser and Node.js. With Function, you can build AI-powered apps by creating and composing GPU-accelerated predictors that run in the cloud. In a few steps:
 
-> *NOTE ⚠️⚠️⚠️*: **Only use publishable access keys when using Function client-side (i.e. in the browser)**.
+> *⚠️⚠️⚠️*: **Only use publishable access keys when using Function client-side (i.e. in the browser)**. This prevents others from extracting your keys and making predictions with your account.
 
 ## Installing Function
 Function is distributed on NPM. Open a terminal and run the following command:
