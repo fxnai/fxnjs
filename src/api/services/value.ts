@@ -47,7 +47,7 @@ export interface ToPlainValueInput {
  * @returns Function value.
  */
 export async function toFunctionValue (input: ToFunctionValueInput): Promise<Value> {
-    const { value, name, storage, shape, minUploadSize: dataUrlLimit, key } = input;
+    const { value, name, storage, shape, minUploadSize: dataUrlLimit = 4096, key } = input;
     // Value
     if (isFunctionValue(value))
         return value;
