@@ -143,7 +143,7 @@ export async function toPlainValue (input: ToPlainValueInput): Promise<PlainValu
  * @returns Whether the input value is a Function value.
  */
 export function isFunctionValue (value: any): value is Value {
-    return value.data && value.type;
+    return value && value.data && value.type;
 }
 
 async function getValueData (url: string): Promise<ArrayBuffer> {

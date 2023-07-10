@@ -1,5 +1,5 @@
 ## 0.0.17
-*INCOMPLETE*
++ Fixed `isFunctionValue` utility method throwing error on `null` input.
 
 ## 0.0.16
 + Added support for using `TypedArray` instances as prediction inputs and outputs.
