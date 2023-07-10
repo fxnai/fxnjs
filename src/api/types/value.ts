@@ -32,7 +32,8 @@ export type PlainValue =
     boolean[]                       |
     (string | number | boolean)[]   |
     { [key: string]: any }          |
-    TypedArray;
+    TypedArray                      |
+    ArrayBuffer;
 
 /**
  * Prediction value.

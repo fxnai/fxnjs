@@ -1,4 +1,6 @@
 ## 0.0.17
++ Added `Dtype.null` constant for working with `null` prediction values.
++ Added support for `ArrayBuffer` instances as prediction inputs.
 + Fixed `isFunctionValue` utility method throwing error on `null` input.
 
 ## 0.0.16

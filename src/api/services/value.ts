@@ -48,6 +48,9 @@ export interface ToPlainValueInput {
  */
 export async function toFunctionValue (input: ToFunctionValueInput): Promise<Value> {
     const { value, name, storage, shape, minUploadSize: dataUrlLimit = 4096, key } = input;
+    // Null
+    if (value === null)
+        return { data: null, type: "null" };
     // Value
     if (isFunctionValue(value))
         return value;
@@ -56,6 +59,11 @@ export async function toFunctionValue (input: ToFunctionValueInput): Promise<Val
         const data = await storage.upload({ name, buffer: value.buffer, type: UploadType.Value, dataUrlLimit, key });
         const type = getTypedArrayDtype(value);
         return { data, type, shape };
+    }
+    // Binary
+    if (value instanceof ArrayBuffer) {
+        const data = await storage.upload({ name, buffer: value, type: UploadType.Value, dataUrlLimit, key });
+        return { data, type: "binary" };
     }
     // String
     if (typeof(value) === "string") {
@@ -114,6 +122,9 @@ export async function toFunctionValue (input: ToFunctionValueInput): Promise<Val
  */
 export async function toPlainValue (input: ToPlainValueInput): Promise<PlainValue | Value> {
     const { value: { data, type } } = input;
+    // Null
+    if (type === "null")
+        return null;
     // Download
     const buffer = await getValueData(data);
     // Tensor
@@ -143,7 +154,7 @@ export async function toPlainValue (input: ToPlainValueInput): Promise<PlainValu
  * @returns Whether the input value is a Function value.
  */
 export function isFunctionValue (value: any): value is Value {
-    return value && value.data && value.type;
+    return value && value.type && value.data !== undefined; // `data` can be `null` but must exist
 }
 
 async function getValueData (url: string): Promise<ArrayBuffer> {

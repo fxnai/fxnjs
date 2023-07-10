@@ -26,4 +26,5 @@ export type Dtype =
     "audio"     |
     "video"     |
     "model"     |
-    "binary";
+    "binary"    |
+    "null";
