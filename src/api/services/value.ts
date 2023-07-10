@@ -154,7 +154,17 @@ export async function toPlainValue (input: ToPlainValueInput): Promise<PlainValu
  * @returns Whether the input value is a Function value.
  */
 export function isFunctionValue (value: any): value is Value {
-    return value && value.type && value.data !== undefined; // `data` can be `null` but must exist
+    // Check null
+    if (value == null)
+        return false;
+    // Check type
+    if (!value.type)
+        return false;
+    // Check data // Can be `null` but must always exist
+    if (value.data === undefined)
+        return false;
+    // Return
+    return true;
 }
 
 async function getValueData (url: string): Promise<ArrayBuffer> {
