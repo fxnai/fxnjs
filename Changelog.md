@@ -1,3 +1,6 @@
+## 0.0.18
+*INCOMPLETE*
+
 ## 0.0.17
 + Added `Dtype.null` constant for working with `null` prediction values.
 + Added support for `ArrayBuffer` instances as prediction inputs.
