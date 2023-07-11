@@ -238,7 +238,7 @@ access
 predictions
 created
 description
-readme
+card
 media
 acceleration
 signature {

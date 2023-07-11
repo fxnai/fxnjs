@@ -1,5 +1,5 @@
 ## 0.0.18
-*INCOMPLETE*
++ Refactored `Predictor.readme` field to `card`.
 
 ## 0.0.17
 + Added `Dtype.null` constant for working with `null` prediction values.

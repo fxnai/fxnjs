@@ -116,9 +116,9 @@ export interface Predictor {
      */
     description?: string;
     /**
-     * Predictor readme.
+     * Predictor card.
      */
-    readme?: string;
+    card?: string;
     /**
      * Predictor media URL.
      * We encourage animated GIF's where possible.
