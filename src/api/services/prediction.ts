@@ -34,7 +34,7 @@ export interface CreatePredictionInput {
     /**
      * Input values.
      */
-    inputs?: { [key: string]: PlainValue | Value };
+    inputs?: Record<string, PlainValue | Value>;
     /**
      * Do not populate convenience fields in output values.
      * This defaults to `false`.
