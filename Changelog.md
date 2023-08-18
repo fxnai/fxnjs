@@ -1,5 +1,5 @@
 ## 0.0.19
-*INCOMPLETE*
++ Added support for making predictions in Vercel Serverless Functions using their edge Runtime.
 
 ## 0.0.18
 + Refactored `Predictor.readme` field to `card`.

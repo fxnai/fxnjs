@@ -86,4 +86,9 @@ export class PredictionService {
     }
 }
 
-const client = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ? "unknown" : "webworker" : "node" : "deno" : "browser";
+const client = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ?
+    "edge" : // we get this in e.g. Vercel Serverless Functions with edge runtime
+    "webworker" :
+    "node" :
+    "deno" :
+    "browser";
