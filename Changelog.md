@@ -1,3 +1,6 @@
+## 0.0.20
+*INCOMPLETE*
+
 ## 0.0.19
 + Added support for making predictions in Vercel Serverless Functions using their edge Runtime.
 
