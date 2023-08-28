@@ -257,6 +257,7 @@ signature {
             type
             shape
         }
+        schema
     }
     outputs {
         name

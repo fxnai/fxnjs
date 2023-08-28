@@ -1,5 +1,5 @@
 ## 0.0.20
-*INCOMPLETE*
++ Added `Parameter.schema` field for inspecting the JSON schema for `dict` and `list` parameters.
 
 ## 0.0.19
 + Added support for making predictions in Vercel Serverless Functions using their edge Runtime.

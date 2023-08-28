@@ -192,6 +192,11 @@ export interface Parameter {
      * Parameter default value.
      */
     defaultValue?: PlainValue | Value;
+    /**
+     * Parameter JSON schema.
+     * This is only populated for `list` and `dict` parameters.
+     */
+    schema?: Record<string, any>;
 }
 
 /**
