@@ -92,7 +92,7 @@ export class PredictionService {
         // Serialize inputs
         const inputs = await serializePredictionInputs(rawInputs, this.storage);
         // Request
-        const url = new URL(`/predict/${tag}`, this.client.url.origin);
+        const url = new URL(`/predict/${tag}`, this.client.url);
         url.searchParams.append("rawOutputs", "true");
         url.searchParams.append("stream", "true");
         url.searchParams.append("dataUrlLimit", dataUrlLimit?.toString());

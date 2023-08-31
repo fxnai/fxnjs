@@ -21,7 +21,7 @@ class PredictionTest {
 
     @mocha.test
     async "Should create a cloud prediction" () {
-        const tag = "@natml/identity";
+        const tag = "@yusuf-delete/identity";
         const inputs = {
             name: "Yusuf",
             age: 24,

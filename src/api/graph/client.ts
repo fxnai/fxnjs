@@ -21,7 +21,7 @@ export interface GraphPayload<T> {
  */
 export class GraphClient {
 
-    public readonly url: URL;
+    public readonly url: string;
     public readonly auth: string
 
     /**
@@ -29,11 +29,11 @@ export class GraphClient {
      * @param config Function client configuration.
      */
     public constructor (config: FunctionConfig) {
-        const { accessKey, url = "https://api.fxn.ai/graph" } =  config;
-        this.url = new URL(url);
+        const { accessKey, url = "https://api.fxn.ai" } =  config;
+        this.url = url;
         this.auth = accessKey ? `Bearer ${accessKey}` : null;
     }
-    
+
     /**
      * Query the Function graph API.
      * @param query Graph query.
@@ -41,7 +41,7 @@ export class GraphClient {
      */
     public async query<T = any> (query: string, variables?: { [key: string]: any }): Promise<GraphPayload<T>> {
         // Request
-        const response = await fetch(this.url, {
+        const response = await fetch(`${this.url}/graph`, {
             method: "POST",
             headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: this.auth },
             body: JSON.stringify({ query, variables })
