@@ -1,3 +1,6 @@
+## 0.0.22
+*INCOMPLETE*
+
 ## 0.0.21
 + Added `Function.predictions.stream` method to create a streaming prediction.
 
