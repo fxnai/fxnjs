@@ -53,6 +53,6 @@ class PredictionTest {
         const predictions: CloudPrediction[] = [];
         for await (const prediction of stream)
             predictions.push(prediction);
-        expect(predictions.length).greaterThan(0);
+        expect(predictions.length).greaterThan(1);
     }
 }
