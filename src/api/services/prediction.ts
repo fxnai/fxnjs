@@ -58,10 +58,10 @@ export class PredictionService {
 
     /**
      * Create a prediction.
-     * @param input Input arguments.
+     * @param input Prediction input.
      * @returns Prediction.
      */
-    public async create (input: CreatePredictionInput): Promise<CloudPrediction | EdgePrediction> {
+    public async create (input: CreatePredictionInput): Promise<CloudPrediction> {
         const { tag, inputs: rawInputs, rawOutputs, dataUrlLimit } = input;
         const minUploadSize = 4096;
         const key = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2); // this doesn't have to be good
@@ -83,6 +83,42 @@ export class PredictionService {
             rawResults;
         const prediction = rawResults !== undefined ? { ...others, results } : others;
         return prediction;
+    }
+
+    /**
+     * Create a streaming prediction.
+     * NOTE: This feature is currently experimental.
+     * @param input Prediction input.
+     * @returns Generator which asynchronously returns prediction results as they are streamed from the predictor.
+     */
+    public async * stream (input: CreatePredictionInput): AsyncGenerator<CloudPrediction> {
+        const { tag, inputs, rawOutputs, dataUrlLimit } = input;
+        const url = new URL(`/predict/${tag}`, this.client.url.origin);
+        url.searchParams.append("rawOutputs", rawOutputs ? "true" : "false");
+        url.searchParams.append("stream", "true");
+        if (dataUrlLimit)
+            url.searchParams.append("dataUrlLimit", dataUrlLimit.toString());
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": this.client.auth,
+                "fxn-client": client
+            },
+            body: JSON.stringify(inputs)
+        });
+        const decoder = new TextDecoderStream();
+        const reader = response.body.pipeThrough(decoder).getReader();
+        let done, value;
+        while (!done) {
+            ({ value, done } = await reader.read());
+            if (done)
+                break;
+            const payload = JSON.parse(value);
+            if (payload.error && Object.keys(payload).length === 1)
+                throw new Error(payload.error);
+            yield payload;
+        }
     }
 }
 

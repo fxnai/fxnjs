@@ -42,4 +42,17 @@ class PredictionTest {
         expect(results?.[0]).to.equal(`Yusuf`)
         expect(results?.[1]).to.equal(24);
     }
+
+    @mocha.test
+    async "Should stream a cloud prediction" () {
+        const sentence = "Hello world";
+        const stream = await this.fxn.predictions.stream({
+            tag: "@yusuf-delete/streaming",
+            inputs: { sentence }
+        });
+        const predictions: CloudPrediction[] = [];
+        for await (const prediction of stream)
+            predictions.push(prediction);
+        expect(predictions.length).greaterThan(0);
+    }
 }

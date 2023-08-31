@@ -1,3 +1,6 @@
+## 0.0.21
++ Added `Function.predictions.stream` method to create a streaming prediction.
+
 ## 0.0.20
 + Added `Parameter.schema` field for inspecting the JSON schema for `dict` and `list` parameters.
 

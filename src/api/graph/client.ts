@@ -21,8 +21,8 @@ export interface GraphPayload<T> {
  */
 export class GraphClient {
 
-    private readonly url: string;
-    private readonly auth: string
+    public readonly url: URL;
+    public readonly auth: string
 
     /**
      * Create a Function graph API client.
@@ -30,7 +30,7 @@ export class GraphClient {
      */
     public constructor (config: FunctionConfig) {
         const { accessKey, url = "https://api.fxn.ai/graph" } =  config;
-        this.url = url;
+        this.url = new URL(url);
         this.auth = accessKey ? `Bearer ${accessKey}` : null;
     }
     
