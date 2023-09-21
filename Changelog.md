@@ -1,5 +1,5 @@
 ## 0.0.22
-*INCOMPLETE*
++ Added `AccessMode.Protected` enumeration member for working with protected predictors.
 
 ## 0.0.21
 + Added `Function.predictions.stream` method to create a streaming prediction.

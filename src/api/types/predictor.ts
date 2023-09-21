@@ -36,7 +36,12 @@ export enum AccessMode {
     /**
      * Predictor can only viewed and loaded by owner.
      */
-    Private = "PRIVATE"
+    Private = "PRIVATE",
+    /**
+     * Predictor can be viewed by any user, but can only be used by the owner.
+     * The predictor can only be directly viewed by its tag and will not be returned in searches.
+     */
+    Protected = "PROTECTED",
 }
 
 /**
