@@ -55,6 +55,13 @@ export interface CreatePredictionInput {
     dataUrlLimit?: number;
 }
 
+export interface DeletePredictionInput {
+    /**
+     * Predictor tag.
+     */
+    tag: string;
+}
+
 interface EdgePredictor {
     module: any;
     handle: number;
@@ -87,7 +94,7 @@ export class PredictionService {
                 id: nanoid(),
                 tag,
                 type: PredictorType.Edge,
-                created: new Date(),
+                created: new Date().toISOString() as unknown as Date,
                 ...await this.predict(this.cache.get(tag), input),
             }
         // Serialize inputs
@@ -104,7 +111,7 @@ export class PredictionService {
         );
         // Parse
         const predictor = prediction.type === PredictorType.Edge ? await this.load(prediction) : null;
-        const { results: edgeResults, latency: edgeLatency, error: edgeError, logs: edgeLogs } = !!predictor ?
+        const { results: edgeResults, latency: edgeLatency, error: edgeError, logs: edgeLogs } = !!predictor && !!rawInputs ?
             await this.predict(predictor, input) :
             { } as EdgePrediction;
         const results = edgeResults ?? await deserializeCloudOutputs(prediction.results as Value[], rawOutputs);
@@ -121,7 +128,7 @@ export class PredictionService {
      * @param input Prediction input.
      * @returns Generator which asynchronously returns prediction results as they are streamed from the predictor.
      */
-    public async * stream (input: CreatePredictionInput): AsyncGenerator<Prediction> {
+    public async * stream (input: CreatePredictionInput): AsyncGenerator<Prediction> { // INCOMPLETE // Edge support
         const { tag, inputs: rawInputs, rawOutputs, dataUrlLimit } = input;
         // Serialize inputs
         const inputs = await serializeCloudInputs(rawInputs, this.storage);
@@ -155,20 +162,39 @@ export class PredictionService {
             yield prediction;
         }
     }
+    
+    /**
+     * Delete an edge predictor that is loaded in memory.
+     * @param input Input arguments.
+     * @returns Whether the edge predictor was successfully deleted from memory.
+     */
+    public async delete (input: DeletePredictionInput): Promise<boolean> {
+        const { tag } = input;
+        // Check
+        if (!this.cache.has(tag))
+            return false;
+        // Pop from cache
+        const { module, handle } = this.cache.get(tag);
+        this.cache.delete(tag);
+        // Release predictor
+        const status = module._FXNPredictorRelease(handle);
+        return status === 0;
+    }
 
     private async load (prediction: Prediction): Promise<EdgePredictor> {
+        const { tag, implementation, resources } = prediction;
         const predictor = await new Promise<EdgePredictor>(async (resolve, reject) => {
             const script = document.createElement("script");
-            script.src = prediction.implementation;
+            script.src = implementation;
             script.onload = async () => {
-                const name = prediction.tag.substring(1).replace("-", "_").replace("/", "_");
-                const wasmPath = prediction.resources.filter(r => r.id === "wasm")[0].url;
+                const name = tag.substring(1).replace("-", "_").replace("/", "_");
+                const wasmPath = resources.filter(r => r.id === "wasm")[0].url;
                 const locateFile = (path: string) => path.endsWith(".wasm") ? wasmPath : path;
-                const dynamicLibraries = prediction.resources.filter(r => r.id === "fxn").map(r => r.url);
+                const dynamicLibraries = resources.filter(r => r.id === "fxn").map(r => r.url);
                 const moduleLoader = (window as any)[name];
                 // Check
                 if (!moduleLoader) {
-                    reject(`Function failed to create prediction for ${prediction.tag} because implementation is invalid`);
+                    reject(`Function Error: Failed to create prediction for ${tag} because implementation is invalid`);
                     return;
                 }
                 // Load module
@@ -176,29 +202,36 @@ export class PredictionService {
                 try {
                     module = await moduleLoader({ locateFile, dynamicLibraries });
                 } catch (err) {
-                    reject(`Function failed to create prediction for ${prediction.tag} with error: ${err}`);
+                    reject(`Function Error: Failed to create prediction for ${tag} with error: ${err}`);
                     return;
                 }
                 // Create predictor
-                const ppPredictor = module._malloc(4);
-                const status = module[`_FXNCreatePredictor_${name}`](null, ppPredictor); // CHECK // Configuration
+                const pTag = module._malloc(tag.length + 1);
+                const pHandle = module._malloc(4);
+                module.stringToUTF8(tag, pTag, tag.length + 1);
+                const status = module._FXNPredictorCreate(pTag, 0, pHandle); // INCOMPLETE // Configuration
+                module._free(pTag);
                 // Check status
                 if (status !== 0) {
-                    reject(`Function failed to create prediction for ${prediction.tag} with status: ${status}`);
+                    reject(`Function Error: Failed to create prediction for ${tag} with status: ${status}`);
                     return;
                 }
+                // Get handle
+                const handle = module.getValue(pHandle, "*");
+                module._free(pHandle);
                 // Resolve
-                const pPredictor = module.getValue(ppPredictor, "*");
-                resolve({ module, handle: pPredictor });
+                resolve({ module, handle });
             };
-            script.onerror = error => reject(`Function failed to create edge prediction ${prediction.tag} with error: ${error}`);
+            script.onerror = error => reject(`Function Error: Failed to create edge prediction ${tag} with error: ${error}`);
             document.body.appendChild(script);
         });
-        this.cache.set(prediction.tag, predictor);
+        // Cache
+        this.cache.set(tag, predictor);
+        // Return
         return predictor;
     }
 
-    private async predict (predictor: EdgePredictor, request: CreatePredictionInput): Promise<EdgePrediction> { // DEPLOY
+    private async predict (predictor: EdgePredictor, request: CreatePredictionInput): Promise<EdgePrediction> { // INCOMPLETE // Logs and error
         const { module, handle } = predictor;
         const { tag, inputs } = request;
         const results: PlainValue[] = [];
@@ -211,7 +244,7 @@ export class PredictionService {
         let status = 0;
         try {
             // Create input map
-            status = module._FXNCreateValueMap(ppInputs);
+            status = module._FXNValueMapCreate(ppInputs);
             if (status !== 0)
                 throw new Error(`Function failed to create prediction for ${tag} because input value map could not be created with status: ${status}`);
             pInputs = module.getValue(ppInputs, "*");
@@ -224,8 +257,7 @@ export class PredictionService {
                 module._free(pKey);
             }
             // Make prediction
-            const symbol = `_FXNPredict_${tag.substring(1).replace("/", "_").replace("-", "_")}`;
-            status = module[symbol](handle, pInputs, ppOutputs);
+            status = module._FXNPredictorPredict(handle, pInputs, ppOutputs);
             if (status !== 0)
                 throw new Error(`Function failed to create prediction for ${tag} with status: ${status}`);
             // Marshal outputs
@@ -246,12 +278,12 @@ export class PredictionService {
             }
             // Return
             const latency = performance.now() - startTime;
-            return { results, latency };
+            return { results, latency, error: null, logs: "" };
         } catch (error) {
             throw error;
         } finally {
-            module._FXNReleaseValueMap(pInputs);
-            module._FXNReleaseValueMap(pOutputs);
+            module._FXNValueMapRelease(pInputs);
+            module._FXNValueMapRelease(pOutputs);
             module._free(ppInputs);
             module._free(ppOutputs);
             module._free(pOutputCount);

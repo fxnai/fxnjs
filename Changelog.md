@@ -1,4 +1,6 @@
 ## 0.0.23
++ Added experimental support for running on-device predictions in the browser with WebAssembly!
++ Added `fxn.predictions.delete` method to delete a loaded edge predictor from memory.
 + Added `bigint` support for prediction inputs and outputs.
 + Fixed `fxn.predictions.create` wrongly returning scalar result for single-element vector output.
 + Removed `CloudPrediction` interface. Use `Prediction` interface instead.
