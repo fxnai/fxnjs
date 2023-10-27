@@ -4,7 +4,7 @@
 */
 
 import parseDataURL from "data-urls"
-import { Dtype, PlainValue, TypedArray, UploadType, Value } from "../types"
+import { Dtype, Image, PlainValue, Tensor, TypedArray, UploadType, Value } from "../types"
 import { StorageService } from "./storage"
 
 export interface ToFunctionValueInput {
@@ -71,7 +71,7 @@ export async function toFunctionValue (input: ToFunctionValueInput): Promise<Val
         const data = await storage.upload({ name, buffer, type: UploadType.Value, dataUrlLimit, key });
         return { data, type: "string" };
     }
-    // Integer
+    // Number
     if (typeof(value) === "number") {
         const isInt = Number.isInteger(value);
         const buffer = isInt ? new Int32Array([ value as number ]).buffer : new Float32Array([ value as number ]).buffer;
@@ -121,7 +121,7 @@ export async function toFunctionValue (input: ToFunctionValueInput): Promise<Val
  * @returns Plain value.
  */
 export async function toPlainValue (input: ToPlainValueInput): Promise<PlainValue | Value> {
-    const { value: { data, type } } = input;
+    const { value: { data, type, shape } } = input;
     // Null
     if (type === "null")
         return null;
@@ -130,10 +130,10 @@ export async function toPlainValue (input: ToPlainValueInput): Promise<PlainValu
     // Tensor
     const ARRAY_TYPES: Dtype[] = ["float16", "float32", "float64", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"];
     if (ARRAY_TYPES.includes(type))
-        return toTypedArrayOrNumber(buffer, type);
+        return toTypedArrayOrNumber(buffer, type, shape);
     // Boolean
     if (type === "bool")
-        return toBoolean(buffer);
+        return toBooleanArrayOrBoolean(buffer, shape);
     // String
     if (type === "string")
         return new TextDecoder().decode(buffer);
@@ -154,17 +154,32 @@ export async function toPlainValue (input: ToPlainValueInput): Promise<PlainValu
  * @returns Whether the input value is a Function value.
  */
 export function isFunctionValue (value: any): value is Value {
-    // Check null
-    if (value == null)
-        return false;
-    // Check type
-    if (!value.type)
-        return false;
-    // Check data // Can be `null` but must always exist
-    if (value.data === undefined)
-        return false;
-    // Return
-    return true;
+    return value != null &&
+        !!value.type &&
+        value.data !== undefined;
+}
+
+/**
+ * Check whether an input value is a Function `Tensor`.
+ * @param value Input value.
+ * @returns Whether the input value is a tensor.
+ */
+export function isTensor (value: any): value is Tensor {
+    return value != null &&
+        ArrayBuffer.isView(value.data) &&
+        Array.isArray(value.shape);
+}
+
+/**
+ * Check whether an input value is a Function `Image`.
+ * @param value Input value.
+ * @returns Whether the input value is an image.
+ */
+export function isImage (value: any): value is Image {
+    return value != null &&
+        (value.data instanceof Uint8Array || value.data instanceof Uint8ClampedArray) &&
+        Number.isInteger(value.width) &&
+        Number.isInteger(value.height);
 }
 
 async function getValueData (url: string): Promise<ArrayBuffer> {
@@ -177,55 +192,40 @@ async function getValueData (url: string): Promise<ArrayBuffer> {
     return buffer;
 }
 
-function toTypedArray (buffer: ArrayBuffer, type: Dtype): TypedArray {
-    switch (type) {
-        case "float32": return new Float32Array(buffer);
-        case "float64": return new Float64Array(buffer);
-        case "int8":    return new Int8Array(buffer);
-        case "int16":   return new Int16Array(buffer);
-        case "int32":   return new Int32Array(buffer);
-        case "int64":   return new BigInt64Array(buffer);
-        case "uint8":   return new Uint8Array(buffer);
-        case "uint16":  return new Uint16Array(buffer);
-        case "uint32":  return new Uint32Array(buffer);
-        case "uint64":  return new BigUint64Array(buffer);
-        default:        return null;
-    }
+function toTypedArrayOrNumber (buffer: ArrayBuffer, type: Dtype, shape: number[]): number | bigint | TypedArray {
+    const CTOR_MAP = {
+        "float32": Float32Array,
+        "float64": Float64Array,
+        "int8":    Int8Array,
+        "int16":   Int16Array,
+        "int32":   Int32Array,
+        "int64":   BigInt64Array,
+        "uint8":   Uint8Array,
+        "uint16":  Uint16Array,
+        "uint32":  Uint32Array,
+        "uint64":  BigUint64Array,
+    } as any;
+    const tensor = new CTOR_MAP[type](buffer);
+    return shape.length > 0 ? tensor : tensor[0];
 }
 
-function toTypedArrayOrNumber (buffer: ArrayBuffer, type: Dtype): number | TypedArray {
-    const tensor = toTypedArray(buffer, type);
-    return tensor.length > 1 ? tensor : tensor[0] as number;
-}
-
-function toBoolean (buffer: ArrayBuffer): boolean | boolean[] {
-    const tensor = toTypedArray(buffer, "uint8");
+function toBooleanArrayOrBoolean (buffer: ArrayBuffer, shape: number[]): boolean | boolean[] {
+    const tensor = new Uint8Array(buffer);
     const array = Array.from(tensor as Uint8Array).map(num => num !== 0);
-    return array.length > 1 ? array : array[0];
+    return shape.length > 0 ? array : array[0];
 }
 
 function getTypedArrayDtype (value: ArrayBufferView): Dtype {
-    if (value instanceof Float32Array)
-        return "float32";
-    if (value instanceof Float64Array)
-        return "float64";
-    if (value instanceof Int8Array)
-        return "int8";
-    if (value instanceof Int16Array)
-        return "int16";
-    if (value instanceof Int32Array)
-        return "int32";
-    if (value instanceof BigInt64Array)
-        return "int64";
-    if (value instanceof Uint8Array)
-        return "uint8";
-    if (value instanceof Uint8ClampedArray)
-        return "uint8";
-    if (value instanceof Uint16Array)
-        return "uint16";
-    if (value instanceof Uint32Array)
-        return "uint32";
-    if (value instanceof BigUint64Array)
-        return "uint64";
+    if (value instanceof Float32Array)      return "float32";
+    if (value instanceof Float64Array)      return "float64";
+    if (value instanceof Int8Array)         return "int8";
+    if (value instanceof Int16Array)        return "int16";
+    if (value instanceof Int32Array)        return "int32";
+    if (value instanceof BigInt64Array)     return "int64";
+    if (value instanceof Uint8Array)        return "uint8";
+    if (value instanceof Uint8ClampedArray) return "uint8";
+    if (value instanceof Uint16Array)       return "uint16";
+    if (value instanceof Uint32Array)       return "uint32";
+    if (value instanceof BigUint64Array)    return "uint64";
     return "binary";
 }

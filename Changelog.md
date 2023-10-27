@@ -1,3 +1,9 @@
+## 0.0.23
++ Added `bigint` support for prediction inputs and outputs.
++ Fixed `fxn.predictions.create` wrongly returning scalar result for single-element vector output.
++ Removed `CloudPrediction` interface. Use `Prediction` interface instead.
++ Removed `EdgePrediction` interface. Use `Prediction` interface instead.
+
 ## 0.0.22
 + Added `AccessMode.Protected` enumeration member for working with protected predictors.
 

@@ -22,17 +22,53 @@ export type TypedArray =
     BigUint64Array;
 
 /**
+ * Image.
+ */
+export interface Image { // structurally equal to `ImageData` // https://developer.mozilla.org/en-US/docs/Web/API/ImageData
+    /**
+     * Pixel buffer.
+     * This MUST have an `RGBA8888` layout.
+     */
+    data: Uint8Array | Uint8ClampedArray;
+    /**
+     * Image width.
+     */
+    width: number;
+    /**
+     * Image height.
+     */
+    height: number;
+}
+
+/**
+ * Tensor.
+ */
+export interface Tensor {
+    /**
+     * Tensor data.
+     */
+    data: TypedArray;
+    /**
+     * Tensor shape.
+     */
+    shape: number[];
+}
+
+/**
  * Plain value.
  */
 export type PlainValue =
     string                          |
     number                          |
     number[]                        |
+    bigint                          |
     boolean                         |
     boolean[]                       |
     (string | number | boolean)[]   |
     { [key: string]: any }          |
     TypedArray                      |
+    Tensor                          |
+    Image                           |
     ArrayBuffer;
 
 /**

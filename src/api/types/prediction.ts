@@ -3,6 +3,7 @@
 *   Copyright © 2023 NatML Inc. All Rights Reserved.
 */
 
+import { PredictorType } from "./predictor"
 import { PlainValue, Value } from "./value"
 
 /**
@@ -14,19 +15,17 @@ export interface Prediction {
      */
     id: string;
     /**
-     * Endpoint tag.
+     * Predictor tag.
      */
     tag: string;
+    /**
+     * Prediction type.
+     */
+    type: PredictorType;
     /**
      * Date created.
      */
     created: Date;
-}
-
-/**
- * Cloud prediction.
- */
-export interface CloudPrediction extends Prediction {
     /**
      * Prediction results.
      */
@@ -44,11 +43,23 @@ export interface CloudPrediction extends Prediction {
      * Prediction logs.
      */
     logs?: string;
+    /**
+     * Predictor implementation.
+     */
+    implementation?: string;
+    /**
+     * Predictor resources.
+     */
+    resources?: PredictionResource[];
 }
 
-/**
- * Edge prediction.
- */
-export interface EdgePrediction extends Prediction {
-    
+export interface PredictionResource {
+    /**
+     * Resource identifier.
+     */
+    id: string;
+    /**
+     * Resource URL.
+     */
+    url: string;
 }
