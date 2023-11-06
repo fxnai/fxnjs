@@ -16,23 +16,20 @@ id
 tag
 type
 created
-... on CloudPrediction {
-    results {
-        data
-        type
-        shape
-    }
-    latency
-    error
-    logs
+implementation
+configuration
+resources {
+    id
+    url
 }
-... on EdgePrediction {
-    implementation
-    resources {
-        id
-        url
-    }
+results {
+    data
+    type
+    shape
 }
+latency
+error
+logs
 `;
 
 export interface CreatePredictionInput {
