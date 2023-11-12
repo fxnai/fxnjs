@@ -11,7 +11,7 @@ import { PlainValue, Value } from "./value"
  */
 export interface Prediction {
     /**
-     * Session ID.
+     * Prediction ID.
      */
     id: string;
     /**
