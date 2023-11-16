@@ -6,7 +6,7 @@
 import mocha from "@testdeck/mocha"
 import { expect, should, use } from "chai"
 import chaiAsPromised from "chai-as-promised"
-import { CloudPrediction, Function } from "../src"
+import { Prediction, Function } from "../src"
 
 @mocha.suite("Predictions")
 class PredictionTest {
@@ -37,7 +37,7 @@ class PredictionTest {
                 width: 3.9
             }
         };
-        const prediction = await this.fxn.predictions.create({ tag, inputs }) as CloudPrediction;
+        const prediction = await this.fxn.predictions.create({ tag, inputs });
         const results = prediction.results;
         expect(results?.[0]).to.equal(`Yusuf`)
         expect(results?.[1]).to.equal(24);
@@ -50,7 +50,7 @@ class PredictionTest {
             tag: "@yusuf-delete/streaming",
             inputs: { sentence }
         });
-        const predictions: CloudPrediction[] = [];
+        const predictions: Prediction[] = [];
         for await (const prediction of stream)
             predictions.push(prediction);
         expect(predictions.length).greaterThan(1);
