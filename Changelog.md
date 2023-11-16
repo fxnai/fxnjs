@@ -1,3 +1,6 @@
+## 0.0.24
+*INCOMPLETE*
+
 ## 0.0.23
 + Added experimental support for running on-device predictions in the browser with WebAssembly!
 + Added `fxn.predictions.delete` method to delete a loaded edge predictor from memory.
