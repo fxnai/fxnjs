@@ -6,8 +6,7 @@
 import mocha from "@testdeck/mocha"
 import { expect, should, use } from "chai"
 import chaiAsPromised from "chai-as-promised"
-import { randomBytes } from "crypto"
-import { Function, toFunctionValue, toPlainValue, StorageService } from "../src"
+import { Function, toFunctionValue, toPlainValue, StorageService, Tensor } from "../src"
 
 @mocha.suite("Values")
 class ValueTest {
@@ -30,12 +29,23 @@ class ValueTest {
     }
 
     @mocha.test
-    async "Should rountrip Function value from float array" () {
-        const input = new Float64Array([1.2, 3.3, 25, 8]);
-        const value = await toFunctionValue({ value: input, name: "tensor", storage: this.fxn.storage, minUploadSize: 4096 });
+    async "Should rountrip Function value from float vector" () {
+        const vector = new Float64Array([1.2, 3.3, 25, 8]);
+        const value = await toFunctionValue({ value: vector, name: "vector", storage: this.fxn.storage, minUploadSize: 4096 });
         expect(value.type).to.equal("float64");
         const output = await toPlainValue({ value }) as Float64Array;
-        expect(Array.from(output)).to.eql(Array.from(input));
+        expect(Array.from(output)).to.eql(Array.from(vector));
+    }
+
+    @mocha.test
+    async "Should rountrip Function value from float tensor" () {
+        const data = new Float32Array([1.2, 3.3, 25, 8]);
+        const tensor: Tensor = { data, shape: [2, 2] };
+        const value = await toFunctionValue({ value: tensor, name: "tensor", storage: this.fxn.storage, minUploadSize: 4096 });
+        expect(value.type).to.equal("float32");
+        const output = await toPlainValue({ value }) as Tensor;
+        expect(Array.from(data)).to.eql(Array.from(output.data as Float32Array));
+        expect(tensor.shape).to.eql(output.shape);
     }
 
     @mocha.test
@@ -48,12 +58,23 @@ class ValueTest {
     }
 
     @mocha.test
-    async "Should rountrip Function value from int array" () {
+    async "Should rountrip Function value from int vector" () {
         const input = new Int16Array([249, 23_293, 990, -31_000]);
         const value = await toFunctionValue({ value: input, name: "tensor", storage: this.fxn.storage, minUploadSize: 4096 });
         expect(value.type).to.equal("int16");
         const output = await toPlainValue({ value }) as Int16Array
         expect(Array.from(output)).to.eql(Array.from(input));
+    }
+
+    @mocha.test
+    async "Should rountrip Function value from int tensor" () {
+        const data = new Int32Array([283, -1309, 1032, 19201, 3, 99]);
+        const tensor: Tensor = { data, shape: [3, 2] };
+        const value = await toFunctionValue({ value: tensor, name: "tensor", storage: this.fxn.storage, minUploadSize: 4096 });
+        expect(value.type).to.equal("int32");
+        const output = await toPlainValue({ value }) as Tensor;
+        expect(Array.from(data)).to.eql(Array.from(output.data as Float32Array));
+        expect(tensor.shape).to.eql(output.shape);
     }
 
     @mocha.test

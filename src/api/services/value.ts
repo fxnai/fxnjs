@@ -21,10 +21,6 @@ export interface ToFunctionValueInput {
      */
     storage: StorageService;
     /**
-     * Tensor value shape for input `TypedArray` tensors.
-     */
-    shape?: number[];
-    /**
      * Value larger than this size in bytes will be uploaded.
      */
     minUploadSize?: number;
@@ -47,19 +43,22 @@ export interface ToPlainValueInput {
  * @returns Function value.
  */
 export async function toFunctionValue (input: ToFunctionValueInput): Promise<Value> {
-    const { value, name, storage, shape, minUploadSize: dataUrlLimit = 4096, key } = input;
+    const { value, name, storage, minUploadSize: dataUrlLimit = 4096, key } = input;
     // Null
     if (value === null)
         return { data: null, type: "null" };
     // Value
     if (isFunctionValue(value))
         return value;
-    // Typed array
-    if (isTypedArray(value)) {
-        const data = await storage.upload({ name, buffer: value.buffer, type: UploadType.Value, dataUrlLimit, key });
-        const type = getTypedArrayDtype(value);
-        return { data, type, shape: shape ?? [value.length] };
+    // Tensor
+    if (isTensor(value)) {
+        const data = await storage.upload({ name, buffer: value.data.buffer, type: UploadType.Value, dataUrlLimit, key });
+        const type = getTypedArrayDtype(value.data);
+        return { data, type, shape: value.shape };
     }
+    // Typed array
+    if (isTypedArray(value))
+        return await toFunctionValue({ ...input, value: { data: value, shape: [value.length] } });
     // Binary
     if (value instanceof ArrayBuffer) {
         const data = await storage.upload({ name, buffer: value, type: UploadType.Value, dataUrlLimit, key });
@@ -94,7 +93,7 @@ export async function toFunctionValue (input: ToFunctionValueInput): Promise<Val
     ) {
         const buffer = new Uint8Array(value as number[]).buffer;
         const data = await storage.upload({ name, buffer, type: UploadType.Value, dataUrlLimit, key });
-        return { data, type: "bool", shape: shape ?? [value.length] };
+        return { data, type: "bool", shape: [value.length] };
     }
     // List
     if (Array.isArray(value)) {
@@ -128,7 +127,11 @@ export async function toPlainValue (input: ToPlainValueInput): Promise<PlainValu
     // Download
     const buffer = await getValueData(data);
     // Tensor
-    const ARRAY_TYPES: Dtype[] = ["float16", "float32", "float64", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"];
+    const ARRAY_TYPES: Dtype[] = [
+        "float16", "float32", "float64",
+        "int8", "int16", "int32", "int64",
+        "uint8", "uint16", "uint32", "uint64"
+    ];
     if (ARRAY_TYPES.includes(type))
         return toTypedArrayOrNumber(buffer, type, shape);
     // Boolean
@@ -212,7 +215,7 @@ async function getValueData (url: string): Promise<ArrayBuffer> {
     return buffer;
 }
 
-function toTypedArrayOrNumber (buffer: ArrayBuffer, type: Dtype, shape: number[]): number | bigint | TypedArray {
+function toTypedArrayOrNumber (buffer: ArrayBuffer, type: Dtype, shape: number[]): number | bigint | TypedArray | Tensor {
     const CTOR_MAP = {
         "float32": Float32Array,
         "float64": Float64Array,
@@ -225,8 +228,8 @@ function toTypedArrayOrNumber (buffer: ArrayBuffer, type: Dtype, shape: number[]
         "uint32":  Uint32Array,
         "uint64":  BigUint64Array,
     } as any;
-    const tensor = new CTOR_MAP[type](buffer);
-    return shape.length > 0 ? tensor : tensor[0];
+    const data = new CTOR_MAP[type](buffer);
+    return shape.length > 0 ? shape.length > 1 ? { data, shape } : data : data[0];
 }
 
 function toBooleanArrayOrBoolean (buffer: ArrayBuffer, shape: number[]): boolean | boolean[] {
