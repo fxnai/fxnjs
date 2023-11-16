@@ -4,7 +4,6 @@
 */
 
 import { isBrowser, isDeno, isNode, isWebWorker } from "browser-or-node"
-import { nanoid } from "nanoid"
 import { GraphClient } from "../../graph"
 import { Prediction, PlainValue, Value, PredictorType } from "../../types"
 import { toFunctionValue, toPlainValue } from "../value"
@@ -88,7 +87,7 @@ export class PredictionService {
         // Check if cached
         if (this.cache.has(tag))
             return {
-                id: nanoid(),
+                id: generateUniqueId(),
                 tag,
                 type: PredictorType.Edge,
                 created: new Date().toISOString() as unknown as Date,
@@ -315,6 +314,13 @@ async function deserializeCloudOutputs (rawResults: Value[], rawOutputs: boolean
     const results = await Promise.all(rawResults.map(value => toPlainValue({ value: value as Value })));
     // Return
     return results;
+}
+
+function generateUniqueId () {
+    const buffer = new Uint8Array(16);
+    crypto.getRandomValues(buffer);
+    const uid = Array.from(buffer, byte => byte.toString(16).padStart(2, '0')).join('');
+    return uid;
 }
 
 const client = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ?

@@ -55,10 +55,10 @@ export async function toFunctionValue (input: ToFunctionValueInput): Promise<Val
     if (isFunctionValue(value))
         return value;
     // Typed array
-    if (ArrayBuffer.isView(value)) {
+    if (isTypedArray(value)) {
         const data = await storage.upload({ name, buffer: value.buffer, type: UploadType.Value, dataUrlLimit, key });
         const type = getTypedArrayDtype(value);
-        return { data, type, shape };
+        return { data, type, shape: shape ?? [value.length] };
     }
     // Binary
     if (value instanceof ArrayBuffer) {
@@ -182,6 +182,26 @@ export function isImage (value: any): value is Image {
         Number.isInteger(value.height);
 }
 
+/**
+ * Check whether an input value is a `TypedArray`
+ * @param value Input value.
+ * @returns Whether the input value is a typed array.
+ */
+export function isTypedArray (value: any): value is TypedArray {
+    if (value instanceof Float32Array)      return true;
+    if (value instanceof Float64Array)      return true;
+    if (value instanceof Int8Array)         return true;
+    if (value instanceof Int16Array)        return true;
+    if (value instanceof Int32Array)        return true;
+    if (value instanceof BigInt64Array)     return true;
+    if (value instanceof Uint8Array)        return true;
+    if (value instanceof Uint8ClampedArray) return true;
+    if (value instanceof Uint16Array)       return true;
+    if (value instanceof Uint32Array)       return true;
+    if (value instanceof BigUint64Array)    return true;
+    return false;
+}
+
 async function getValueData (url: string): Promise<ArrayBuffer> {
     // Data URL
     if (url.startsWith("data:"))
@@ -215,7 +235,7 @@ function toBooleanArrayOrBoolean (buffer: ArrayBuffer, shape: number[]): boolean
     return shape.length > 0 ? array : array[0];
 }
 
-function getTypedArrayDtype (value: ArrayBufferView): Dtype {
+function getTypedArrayDtype (value: TypedArray): Dtype {
     if (value instanceof Float32Array)      return "float32";
     if (value instanceof Float64Array)      return "float64";
     if (value instanceof Int8Array)         return "int8";
