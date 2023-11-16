@@ -1,3 +1,12 @@
+## 0.0.23
++ Added experimental support for running on-device predictions in the browser with WebAssembly!
++ Added `fxn.predictions.delete` method to delete a loaded edge predictor from memory.
++ Added `bigint` support for prediction inputs and outputs.
++ Fixed `fxn.predictions.create` wrongly returning scalar result for single-element vector output.
++ Fixed `fxn.predictors.list` returning `null` when listing organization predictors.
++ Removed `CloudPrediction` interface. Use `Prediction` interface instead.
++ Removed `EdgePrediction` interface. Use `Prediction` interface instead.
+
 ## 0.0.22
 + Added `AccessMode.Protected` enumeration member for working with protected predictors.
 

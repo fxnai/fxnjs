@@ -147,10 +147,8 @@ export class PredictorService {
         const { data: { user } } = await this.client.query<{ user: { predictors: Predictor[] } }>(
             `query ($user: UserInput, $predictors: UserPredictorsInput) {
                 user (input: $user) {
-                    ... on User {
-                        predictors (input: $predictors) {
-                            ${PREDICTOR_FIELDS}
-                        }
+                    predictors (input: $predictors) {
+                        ${PREDICTOR_FIELDS}
                     }
                 }
             }`,
