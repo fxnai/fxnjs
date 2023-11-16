@@ -3,7 +3,7 @@
 *   Copyright © 2023 NatML Inc. All Rights Reserved.
 */
 
-import { Image, PlainValue, Prediction, Tensor, TypedArray, Value } from "../../types"
+import { Image, PlainValue, Tensor, TypedArray, Value } from "../../types"
 import { isFunctionValue, isImage, isTensor } from "../value"
 
 const enum Dtype {
@@ -27,7 +27,7 @@ const enum Dtype {
     Binary = 17
 }
 
-export function toFunctionValue (value: PlainValue | Value, module: any): number { // DEPLOY
+export function toFunctionValue (value: PlainValue | Value, module: any): number {
     const ppValue = module._malloc(4);
     try {
         // Null
@@ -131,7 +131,7 @@ export function toFunctionValue (value: PlainValue | Value, module: any): number
     }
 }
 
-export function toPlainValue (pValue: number, module: any): PlainValue { // DEPLOY
+export function toPlainValue (pValue: number, module: any): PlainValue {
     const ppData = module._malloc(4);
     const pType = module._malloc(4);
     const pDims = module._malloc(4);
@@ -213,7 +213,7 @@ function dtypeFromTypedArray (data: TypedArray | ArrayBuffer): Dtype {
     if (data instanceof Uint16Array)        return Dtype.Uint16;
     if (data instanceof Uint32Array)        return Dtype.Uint32;
     if (data instanceof BigUint64Array)     return Dtype.Uint64;
-    throw new Error('Unsupported TypedArray or ArrayBuffer type.');
+    throw new Error("Unsupported TypedArray or ArrayBuffer type");
 }
 
 class BoolArray extends Uint8Array { }

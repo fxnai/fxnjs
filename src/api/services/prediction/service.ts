@@ -125,7 +125,7 @@ export class PredictionService {
      * @param input Prediction input.
      * @returns Generator which asynchronously returns prediction results as they are streamed from the predictor.
      */
-    public async * stream (input: CreatePredictionInput): AsyncGenerator<Prediction> { // INCOMPLETE // Edge support
+    public async * stream (input: CreatePredictionInput): AsyncGenerator<Prediction> { // TODO // Edge support
         const { tag, inputs: rawInputs, rawOutputs, dataUrlLimit } = input;
         // Serialize inputs
         const inputs = await serializeCloudInputs(rawInputs, this.storage);
@@ -206,7 +206,7 @@ export class PredictionService {
                 const pTag = module._malloc(tag.length + 1);
                 const pHandle = module._malloc(4);
                 module.stringToUTF8(tag, pTag, tag.length + 1);
-                const status = module._FXNPredictorCreate(pTag, 0, pHandle); // INCOMPLETE // Configuration
+                const status = module._FXNPredictorCreate(pTag, 0, pHandle); // TODO // Configuration
                 module._free(pTag);
                 // Check status
                 if (status !== 0) {
@@ -228,7 +228,7 @@ export class PredictionService {
         return predictor;
     }
 
-    private async predict (predictor: EdgePredictor, request: CreatePredictionInput): Promise<EdgePrediction> { // INCOMPLETE // Logs and error
+    private async predict (predictor: EdgePredictor, request: CreatePredictionInput): Promise<EdgePrediction> { // TODO // Logs and error
         const { module, handle } = predictor;
         const { tag, inputs } = request;
         const results: PlainValue[] = [];
