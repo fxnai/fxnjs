@@ -97,13 +97,14 @@ export class PredictionService {
         const inputObject = await serializeCloudInputs(rawInputs, this.storage);
         const inputs = inputObject ? Object.entries(inputObject).map(([name, value]) => ({ ...value, name })) : null;
         // Query
+        const configuration = getConfigurationId();
         const { data: { prediction } } = await this.client.query<{ prediction: Prediction }>(
             `mutation ($input: CreatePredictionInput!) {
                 prediction: createPrediction (input: $input) {
                     ${PREDICTION_FIELDS}
                 }
             }`,
-            { input: { tag, inputs, client, dataUrlLimit } }
+            { input: { tag, inputs, client, dataUrlLimit, configuration } }
         );
         // Parse
         const predictor = prediction.type === PredictorType.Edge ? await this.load(prediction) : null;
@@ -178,12 +179,12 @@ export class PredictionService {
     }
 
     private async load (prediction: Prediction): Promise<EdgePredictor> {
-        const { tag, implementation, resources } = prediction;
+        const { tag, implementation, resources, configuration } = prediction;
         const predictor = await new Promise<EdgePredictor>(async (resolve, reject) => {
             const script = document.createElement("script");
             script.src = implementation;
             script.onload = async () => {
-                const name = tag.substring(1).replace("-", "_").replace("/", "_");
+                const name = "__fxn_" + tag.substring(1).replace("-", "_").replace("/", "_");
                 const wasmPath = resources.filter(r => r.id === "wasm")[0].url;
                 const locateFile = (path: string) => path.endsWith(".wasm") ? wasmPath : path;
                 const dynamicLibraries = resources.filter(r => r.id === "fxn").map(r => r.url);
@@ -201,11 +202,38 @@ export class PredictionService {
                     reject(`Function Error: Failed to create prediction for ${tag} with error: ${err}`);
                     return;
                 }
+                // Create configuration
+                let status = 0;
+                const ppConfiguration = module._malloc(4);
+                status = module._FXNConfigurationCreate(ppConfiguration);
+                if (status != 0) {
+                    reject(`Function Error: Failed to create prediction configuration for ${tag} with status: ${status}`);
+                    return;
+                }
+                const pConfiguration = module.getValue(ppConfiguration, "*");
+                const pToken = module._malloc(configuration.length + 1);
+                module.stringToUTF8(configuration, pToken, configuration.length + 1);
+                status = module._FXNConfigurationSetToken(pConfiguration, pToken);
+                module._free(ppConfiguration);
+                module._free(pToken);
+                if (status != 0) {
+                    reject(`Function Error: Failed to set prediction configuration token for ${tag} with status: ${status}`);
+                    return;
+                }
+                // Download resources
+                for (const resource of resources) {
+                    if (["fxn", "wasm"].includes(resource.id))
+                        continue;
+                    const download = await fetch(resource.url);
+                    const buffer = await download.arrayBuffer();
+                    module.FS.mkdir("/fxn");
+                    module.FS.writeFile(`/fxn/${resource.id}`, new Uint8Array(buffer));
+                }
                 // Create predictor
                 const pTag = module._malloc(tag.length + 1);
-                const pHandle = module._malloc(4);
+                const ppPredictor = module._malloc(4);
                 module.stringToUTF8(tag, pTag, tag.length + 1);
-                const status = module._FXNPredictorCreate(pTag, 0, pHandle); // TODO // Configuration
+                status = module._FXNPredictorCreate(pTag, pConfiguration, ppPredictor);
                 module._free(pTag);
                 // Check status
                 if (status !== 0) {
@@ -213,8 +241,8 @@ export class PredictionService {
                     return;
                 }
                 // Get handle
-                const handle = module.getValue(pHandle, "*");
-                module._free(pHandle);
+                const handle = module.getValue(ppPredictor, "*");
+                module._free(ppPredictor);
                 // Resolve
                 resolve({ module, handle });
             };
@@ -253,7 +281,7 @@ export class PredictionService {
                 module._free(pKey);
             }
             // Make prediction
-            status = module._FXNPredictorPredict(handle, pInputs, ppOutputs);
+            status = module._FXNPredictorPredict(handle, pInputs, 0, ppOutputs);
             if (status !== 0)
                 throw new Error(`Function failed to create prediction for ${tag} with status: ${status}`);
             // Marshal outputs
@@ -321,6 +349,18 @@ function generateUniqueId () {
     crypto.getRandomValues(buffer);
     const uid = Array.from(buffer, byte => byte.toString(16).padStart(2, '0')).join('');
     return uid;
+}
+
+function getConfigurationId () {
+    // Browser
+    if (typeof window !== "undefined") {
+        const currentId = localStorage.getItem("__edgefxn");
+        if (currentId)
+            return currentId;
+        const newId = generateUniqueId();
+        localStorage.setItem("__edgefxn", newId);
+        return newId;
+    }
 }
 
 const client = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ?
