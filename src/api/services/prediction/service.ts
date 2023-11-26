@@ -15,7 +15,6 @@ id
 tag
 type
 created
-implementation
 configuration
 resources {
     id
@@ -179,15 +178,16 @@ export class PredictionService {
     }
 
     private async load (prediction: Prediction): Promise<EdgePredictor> {
-        const { tag, implementation, resources, configuration } = prediction;
+        const { tag, resources, configuration } = prediction;
         const predictor = await new Promise<EdgePredictor>(async (resolve, reject) => {
             const script = document.createElement("script");
-            script.src = implementation;
+            script.src = resources.find(r => r.id.startsWith("pdre-js")).url;
+            script.onerror = error => reject(`Function Error: Failed to create ${tag} prediction with error: ${error}`);
             script.onload = async () => {
                 const name = "__fxn_" + tag.substring(1).replace("-", "_").replace("/", "_");
-                const wasmPath = resources.filter(r => r.id === "wasm")[0].url;
+                const wasmPath = resources.filter(r => r.id.startsWith("pdre-wasm"))[0].url;
                 const locateFile = (path: string) => path.endsWith(".wasm") ? wasmPath : path;
-                const dynamicLibraries = resources.filter(r => r.id === "fxn").map(r => r.url);
+                const dynamicLibraries = resources.filter(r => r.id.startsWith("pdre-fxn")).map(r => r.url);
                 const moduleLoader = (window as any)[name];
                 // Check
                 if (!moduleLoader) {
@@ -222,7 +222,7 @@ export class PredictionService {
                 }
                 // Download resources
                 for (const resource of resources) {
-                    if (["fxn", "wasm"].includes(resource.id))
+                    if (["pdre-fxn", "pdre-wasm", "pdre-js"].some(id => resource.id.startsWith(id)))
                         continue;
                     const download = await fetch(resource.url);
                     const buffer = await download.arrayBuffer();
@@ -246,7 +246,6 @@ export class PredictionService {
                 // Resolve
                 resolve({ module, handle });
             };
-            script.onerror = error => reject(`Function Error: Failed to create edge prediction ${tag} with error: ${error}`);
             document.body.appendChild(script);
         });
         // Cache

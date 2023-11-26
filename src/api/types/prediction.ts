@@ -44,11 +44,6 @@ export interface Prediction {
      */
     logs?: string;
     /**
-     * Predictor implementation.
-     * This is only populated for `EDGE` predictions.
-     */
-    implementation?: string;
-    /**
      * Predictor resources.
      * This is only populated for `EDGE` predictions.
      */
