@@ -1,6 +1,6 @@
 /*
 *   Function
-*   Copyright © 2023 NatML Inc. All Rights Reserved.
+*   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
 import mocha from "@testdeck/mocha"
@@ -24,7 +24,7 @@ class UserTest {
     async "Should retrieve the current authed user" () {
         const user = await this.fxn.users.retrieve() as User;
         expect(user.email).to.not.be.undefined;
-        expect(user.username).to.equal("natml");
+        expect(user.username).to.equal("yusuf");
     }
 
     @mocha.test

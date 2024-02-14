@@ -1,6 +1,6 @@
 /*
 *   Function
-*   Copyright © 2023 NatML Inc. All Rights Reserved.
+*   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
 import mocha from "@testdeck/mocha"
@@ -21,7 +21,7 @@ class PredictorTest {
 
     @mocha.test
     async "Should retrieve a valid predictor" () {
-        const tag = "@natml/identity";
+        const tag = "@yusuf/identity";
         const predictor = await this.fxn.predictors.retrieve({ tag });
         expect(predictor.tag).to.equal(tag);
     }
@@ -40,7 +40,7 @@ class PredictorTest {
 
     @mocha.test
     async "Should create a predictor" () {
-        const tag = "@natml/js-test";
+        const tag = "@yusuf/js-test";
         const type = PredictorType.Cloud;
         const notebook = "https://fxnai.s3.amazonaws.com/notebooks/05d441948f1da5f2b49a1c/identity.ipynb";
         const predictor = await this.fxn.predictors.create({ tag, type, notebook });
@@ -49,7 +49,7 @@ class PredictorTest {
 
     @mocha.test
     async "Should delete a predictor" () {
-        const tag = "@natml/js-test";
+        const tag = "@yusuf/js-test";
         const deleted = await this.fxn.predictors.delete({ tag });
         expect(deleted).to.be.true;
     }

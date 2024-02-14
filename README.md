@@ -32,7 +32,7 @@ Then make a prediction:
 ```js
 // Make a prediction
 const prediction = await fxn.predictions.create({
-    tag: "@natml/greeting-sample",
+    tag: "@samplefxn/greeting",
     inputs: {
         name: "Rhea"
     }

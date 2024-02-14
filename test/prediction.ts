@@ -1,6 +1,6 @@
 /*
 *   Function
-*   Copyright © 2023 NatML Inc. All Rights Reserved.
+*   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
 import mocha from "@testdeck/mocha"
@@ -47,7 +47,7 @@ class PredictionTest {
     async "Should stream a cloud prediction" () {
         const sentence = "Hello world";
         const stream = await this.fxn.predictions.stream({
-            tag: "@yusuf-delete/streaming",
+            tag: "@yusuf/streaming",
             inputs: { sentence }
         });
         const predictions: Prediction[] = [];
