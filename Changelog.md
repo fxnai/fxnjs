@@ -1,3 +1,6 @@
+## 0.0.25
+*INCOMPLETE*
+
 ## 0.0.24
 + Added `PredictionResource.type` field for inspecting the type of a prediction resource.
 
