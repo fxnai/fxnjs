@@ -1,6 +1,6 @@
 /*
 *   Function
-*   Copyright © 2023 NatML Inc. All Rights Reserved.
+*   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
 import { PredictorType } from "./predictor"
@@ -27,6 +27,16 @@ export interface Prediction {
      */
     created: Date;
     /**
+     * Prediction configuration.
+     * This is only populated for `EDGE` predictions.
+     */
+    configuration?: string;
+    /**
+     * Predictor resources.
+     * This is only populated for `EDGE` predictions.
+     */
+    resources?: PredictionResource[];
+    /**
      * Prediction results.
      */
     results?: (Value | PlainValue)[];
@@ -42,17 +52,7 @@ export interface Prediction {
     /**
      * Prediction logs.
      */
-    logs?: string;
-    /**
-     * Predictor resources.
-     * This is only populated for `EDGE` predictions.
-     */
-    resources?: PredictionResource[];
-    /**
-     * Prediction configuration.
-     * This is only populated for `EDGE` predictions.
-     */
-    configuration?: string;
+    logs?: string;    
 }
 
 export interface PredictionResource {
@@ -60,6 +60,10 @@ export interface PredictionResource {
      * Resource identifier.
      */
     id: string;
+    /**
+     * Resource type.
+     */
+    type: string;
     /**
      * Resource URL.
      */

@@ -1,6 +1,6 @@
 /*
 *   Function
-*   Copyright © 2023 NatML Inc. All Rights Reserved.
+*   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
 import { isBrowser, isDeno, isNode, isWebWorker } from "browser-or-node"
@@ -18,6 +18,7 @@ created
 configuration
 resources {
     id
+    type
     url
 }
 results {
@@ -95,17 +96,23 @@ export class PredictionService {
         // Serialize inputs
         const inputObject = await serializeCloudInputs(rawInputs, this.storage);
         const inputs = inputObject ? Object.entries(inputObject).map(([name, value]) => ({ ...value, name })) : null;
-        // Query
-        const configuration = getConfigurationId();
-        const { data: { prediction } } = await this.client.query<{ prediction: Prediction }>(
-            `mutation ($input: CreatePredictionInput!) {
-                prediction: createPrediction (input: $input) {
-                    ${PREDICTION_FIELDS}
-                }
-            }`,
-            { input: { tag, inputs, client, dataUrlLimit, configuration } }
-        );
+        // Request
+        const url = new URL(`/predict/${tag}`, this.client.url);
+        url.searchParams.append("rawOutputs", "true");
+        if (dataUrlLimit)
+            url.searchParams.append("dataUrlLimit", dataUrlLimit.toString());
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": this.client.auth,
+                "fxn-client": client,
+                "fxn-configuration-token": getConfigurationId(),
+            },
+            body: JSON.stringify(inputs)
+        });
         // Parse
+        const prediction = await response.json();
         const predictor = prediction.type === PredictorType.Edge ? await this.load(prediction) : null;
         const { results: edgeResults, latency: edgeLatency, error: edgeError, logs: edgeLogs } = !!predictor && !!rawInputs ?
             await this.predict(predictor, input) :
@@ -132,7 +139,8 @@ export class PredictionService {
         const url = new URL(`/predict/${tag}`, this.client.url);
         url.searchParams.append("rawOutputs", "true");
         url.searchParams.append("stream", "true");
-        url.searchParams.append("dataUrlLimit", dataUrlLimit?.toString());
+        if (dataUrlLimit)
+            url.searchParams.append("dataUrlLimit", dataUrlLimit.toString());
         const response = await fetch(url, {
             method: "POST",
             headers: {

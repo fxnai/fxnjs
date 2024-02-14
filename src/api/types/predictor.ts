@@ -1,6 +1,6 @@
 /*
 *   Function
-*   Copyright © 2023 NatML Inc. All Rights Reserved.
+*   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
 import { Dtype } from "./dtype"
@@ -109,6 +109,10 @@ export interface Predictor {
      */
     access: AccessMode;
     /**
+     * Predictor signature.
+     */
+    signature: Signature;
+    /**
      * Number of predictions made with this predictor.
      */
     predictions: number;
@@ -134,10 +138,6 @@ export interface Predictor {
      * This only applies to `CLOUD` predictors.
      */
     acceleration?: Acceleration;
-    /**
-     * Predictor signature.
-     */
-    signature?: Signature;
     /**
      * Predictor provisioning error.
      * This is populated when the predictor `status` is `INVALID`.
@@ -171,7 +171,7 @@ export interface Parameter {
     /**
      * Parameter name.
      */
-    name?: string;
+    name: string;
     /**
      * Parameter type.
      * This is `null` if the type is unknown or unsupported by Function.

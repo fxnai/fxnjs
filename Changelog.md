@@ -1,5 +1,5 @@
 ## 0.0.24
-*INCOMPLETE*
++ Added `PredictionResource.type` field for inspecting the type of a prediction resource.
 
 ## 0.0.23
 + Added experimental support for running on-device predictions in the browser with WebAssembly!
