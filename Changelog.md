@@ -1,5 +1,5 @@
 ## 0.0.25
-*INCOMPLETE*
++ Removed `AccessMode.Protected` access mode. Use `AccessMode.Public` or `AccessMode.Private` instead.
 
 ## 0.0.24
 + Added `PredictionResource.type` field for inspecting the type of a prediction resource.
