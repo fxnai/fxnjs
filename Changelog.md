@@ -1,3 +1,6 @@
+## 0.0.26
+*INCOMPLETE*
+
 ## 0.0.25
 + Removed `AccessMode.Protected` access mode. Use `AccessMode.Public` or `AccessMode.Private` instead.
 + Removed `PredictionResource.id` field as it is no longer used.
