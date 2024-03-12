@@ -57,10 +57,6 @@ export interface Prediction {
 
 export interface PredictionResource {
     /**
-     * Resource identifier.
-     */
-    id: string;
-    /**
      * Resource type.
      */
     type: string;

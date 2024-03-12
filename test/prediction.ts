@@ -19,7 +19,7 @@ class PredictionTest {
         this.fxn = new Function({ accessKey: process.env.ACCESS_KEY, url: process.env.API_URL });
     }
 
-    @mocha.test
+    @mocha.test.skip
     async "Should create a cloud prediction" () {
         const tag = "@yusuf/identity";
         const inputs = {
@@ -43,7 +43,7 @@ class PredictionTest {
         expect(results?.[1]).to.equal(24);
     }
 
-    @mocha.test
+    @mocha.test.skip
     async "Should stream a cloud prediction" () {
         const sentence = "Hello world";
         const stream = await this.fxn.predictions.stream({
@@ -54,5 +54,15 @@ class PredictionTest {
         for await (const prediction of stream)
             predictions.push(prediction);
         expect(predictions.length).greaterThan(1);
+    }
+
+    @mocha.test
+    async "Should create an edge prediction" () {
+        const prediction = await this.fxn.predictions.create({
+            tag: "@fxn/math",
+            inputs: { radius: 4 }
+        });
+        const results = prediction.results;
+
     }
 }

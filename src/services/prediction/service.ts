@@ -17,7 +17,6 @@ type
 created
 configuration
 resources {
-    id
     type
     url
 }
@@ -58,23 +57,20 @@ export interface DeletePredictionInput {
     tag: string;
 }
 
-interface EdgePredictor {
-    module: any;
-    handle: number;
-}
-
-type EdgePrediction = Pick<Prediction, "results" | "latency" | "error" | "logs">;
-
 export class PredictionService {
 
     private readonly client: GraphClient;
     private readonly storage: StorageService;
-    private readonly cache: Map<string, EdgePredictor>;
+    private readonly cache: Map<string, number>;
+    private fxnc: any;
+    private readonly FXNC_VERSION = "0.0.11";
+    private readonly FXNC_DATA_ROOT = "/fxn";
+    private readonly FXNC_CACHE_ROOT = `${this.FXNC_DATA_ROOT}/cache`;
 
     public constructor (client: GraphClient, storage: StorageService) {
         this.client = client;
         this.storage = storage;
-        this.cache = new Map<string, EdgePredictor>();
+        this.cache = new Map<string, number>();
     }
 
     /**
@@ -83,46 +79,44 @@ export class PredictionService {
      * @returns Prediction.
      */
     public async create (input: CreatePredictionInput): Promise<Prediction> {
-        const { tag, inputs: rawInputs, rawOutputs, dataUrlLimit } = input;
+        const { tag, inputs, rawOutputs, dataUrlLimit } = input;
+        // Load fxnc
+        this.fxnc = this.fxnc ?? await this.loadFxnc();
         // Check if cached
         if (this.cache.has(tag))
-            return {
-                id: generateUniqueId(),
-                tag,
-                type: PredictorType.Edge,
-                created: new Date().toISOString() as unknown as Date,
-                ...await this.predict(this.cache.get(tag), input),
-            }
+            return this.predict(tag, this.cache.get(tag), inputs);
         // Serialize inputs
-        const inputObject = await serializeCloudInputs(rawInputs, this.storage);
-        const inputs = inputObject ? Object.entries(inputObject).map(([name, value]) => ({ ...value, name })) : null;
-        // Request
+        const values = await serializeCloudInputs(inputs, this.storage);
+        // Build URL
         const url = new URL(`/predict/${tag}`, this.client.url);
         url.searchParams.append("rawOutputs", "true");
         if (dataUrlLimit)
             url.searchParams.append("dataUrlLimit", dataUrlLimit.toString());
+        // Query
         const response = await fetch(url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": this.client.auth,
                 "fxn-client": client,
-                "fxn-configuration-token": getConfigurationId(),
+                "fxn-configuration-token": this.getConfigurationId(),
             },
-            body: JSON.stringify(inputs)
-        });
-        // Parse
+            body: JSON.stringify(values)
+        });        
         const prediction = await response.json();
-        const predictor = prediction.type === PredictorType.Edge ? await this.load(prediction) : null;
-        const { results: edgeResults, latency: edgeLatency, error: edgeError, logs: edgeLogs } = !!predictor && !!rawInputs ?
-            await this.predict(predictor, input) :
-            { } as EdgePrediction;
-        const results = edgeResults ?? await deserializeCloudOutputs(prediction.results as Value[], rawOutputs);
-        const latency = edgeLatency ?? prediction.latency;
-        const error = edgeError ?? prediction.error;
-        const logs = edgeLogs ?? prediction.logs;
-        // Return
-        return { ...prediction, results, latency, error, logs };
+        // Check
+        if (!response.ok)
+            throw new Error(prediction.errors?.[0].message ?? "An unknown error occurred");
+        // Parse
+        prediction.results = await parseResults(prediction.results, rawOutputs);
+        // Check edge prediction
+        if (prediction.type !== PredictorType.Edge)
+            return prediction;
+        // Load edge predictor
+        const predictor = await this.load(prediction);
+        this.cache.set(tag, predictor);
+        // Create edge prediction
+        return !!inputs ? this.predict(tag, predictor, inputs) : prediction;
     }
 
     /**
@@ -131,10 +125,12 @@ export class PredictionService {
      * @param input Prediction input.
      * @returns Generator which asynchronously returns prediction results as they are streamed from the predictor.
      */
-    public async * stream (input: CreatePredictionInput): AsyncGenerator<Prediction> { // TODO // Edge support
-        const { tag, inputs: rawInputs, rawOutputs, dataUrlLimit } = input;
+    public async * stream (input: CreatePredictionInput): AsyncGenerator<Prediction> { // INCOMPLETE // Edge support
+        const { tag, inputs, rawOutputs, dataUrlLimit } = input;
+        // Load fxnc
+        this.fxnc = this.fxnc ?? await this.loadFxnc();
         // Serialize inputs
-        const inputs = await serializeCloudInputs(rawInputs, this.storage);
+        const values = await serializeCloudInputs(inputs, this.storage);
         // Request
         const url = new URL(`/predict/${tag}`, this.client.url);
         url.searchParams.append("rawOutputs", "true");
@@ -146,24 +142,28 @@ export class PredictionService {
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": this.client.auth,
-                "fxn-client": client
+                "fxn-client": client,
+                "fxn-configuration-token": this.getConfigurationId(),
             },
-            body: JSON.stringify(inputs)
+            body: JSON.stringify(values)
         });
         // Stream
         const decoder = new TextDecoderStream();
         const reader = response.body.pipeThrough(decoder).getReader();
         let done, value;
         while (!done) {
+            // Consume
             ({ value, done } = await reader.read());
             if (done)
                 break;
-            const payload = JSON.parse(value) as Prediction;
+            // Check error
+            const payload = JSON.parse(value);
             if (response.status >= 400)
-                throw new Error(payload.error);
-            const results = await deserializeCloudOutputs(payload.results as Value[], rawOutputs);
-            const prediction: Prediction = { ...payload, results };    
-            yield prediction;
+                throw new Error(payload.errors?.[0].message ?? "An unknown error occurred");
+            // Deserialize
+            payload.results = await parseResults(payload.results, rawOutputs);
+            // Yield
+            yield payload;
         }
     }
     
@@ -178,146 +178,230 @@ export class PredictionService {
         if (!this.cache.has(tag))
             return false;
         // Pop from cache
-        const { module, handle } = this.cache.get(tag);
+        const predictor = this.cache.get(tag);
         this.cache.delete(tag);
         // Release predictor
-        const status = module._FXNPredictorRelease(handle);
+        const status = this.fxnc._FXNPredictorRelease(predictor);
         return status === 0;
     }
 
-    private async load (prediction: Prediction): Promise<EdgePredictor> {
-        const { tag, resources, configuration } = prediction;
-        const predictor = await new Promise<EdgePredictor>(async (resolve, reject) => {
+    private async loadFxnc (): Promise<any> {
+        // INCOMPLETE // Disable for now
+        if (true)
+            return null;
+        // Check env
+        if (!isBrowser)
+            return null;
+        // Load
+        const FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/edgefxn/${this.FXNC_VERSION}`;
+        return new Promise((resolve, reject) => {
             const script = document.createElement("script");
-            script.src = resources.find(r => r.id.startsWith("pdre-js")).url;
-            script.onerror = error => reject(`Function Error: Failed to create ${tag} prediction with error: ${error}`);
+            script.src = `${FXNC_LIB_URL_BASE}/Function.js`;
+            script.onerror = error => reject(`Function Error: Failed to load Function implementation for in-browser predictions with error: ${error}`);
             script.onload = async () => {
-                const name = "__fxn_" + tag.substring(1).replace("-", "_").replace("/", "_");
-                const wasmPath = resources.filter(r => r.id.startsWith("pdre-wasm"))[0].url;
-                const locateFile = (path: string) => path.endsWith(".wasm") ? wasmPath : path;
-                const dynamicLibraries = resources.filter(r => r.id.startsWith("pdre-fxn")).map(r => r.url);
+                // Get loader
+                const name = "__fxn";
+                const locateFile = (path: string) => path === "Function.wasm" ? `${FXNC_LIB_URL_BASE}/Function.wasm` : path;
                 const moduleLoader = (window as any)[name];
-                // Check
-                if (!moduleLoader) {
-                    reject(`Function Error: Failed to create prediction for ${tag} because implementation is invalid`);
-                    return;
-                }
-                // Load module
-                let module: any = undefined;
+                (window as any)[name] = null;
                 try {
-                    module = await moduleLoader({ locateFile, dynamicLibraries });
-                } catch (err) {
-                    reject(`Function Error: Failed to create prediction for ${tag} with error: ${err}`);
-                    return;
+                    // Load
+                    const fxnc = await moduleLoader({ locateFile });
+                    // Mount fs
+                    fxnc.FS.mkdir(this.FXNC_DATA_ROOT);
+                    //fxnc.FS.mount(fxnc.IDBFS, {}, this.FXNC_DATA_ROOT);
+                    await new Promise<void>((res, rej) => fxnc.FS.syncfs(true, (err: any) => err ? rej(err) : res()));
+                    // Resolve
+                    resolve(fxnc);
+                } catch (error) {
+                    reject(`Function Error: Failed to load Function implementation for in-browser predictions with error: ${error}`);
+                } finally {
+                    script.remove();
                 }
-                // Create configuration
-                let status = 0;
-                const ppConfiguration = module._malloc(4);
-                status = module._FXNConfigurationCreate(ppConfiguration);
-                if (status != 0) {
-                    reject(`Function Error: Failed to create prediction configuration for ${tag} with status: ${status}`);
-                    return;
-                }
-                const pConfiguration = module.getValue(ppConfiguration, "*");
-                const pToken = module._malloc(configuration.length + 1);
-                module.stringToUTF8(configuration, pToken, configuration.length + 1);
-                status = module._FXNConfigurationSetToken(pConfiguration, pToken);
-                module._free(ppConfiguration);
-                module._free(pToken);
-                if (status != 0) {
-                    reject(`Function Error: Failed to set prediction configuration token for ${tag} with status: ${status}`);
-                    return;
-                }
-                // Download resources
-                for (const resource of resources) {
-                    if (["pdre-fxn", "pdre-wasm", "pdre-js"].some(id => resource.id.startsWith(id)))
-                        continue;
-                    const download = await fetch(resource.url);
-                    const buffer = await download.arrayBuffer();
-                    module.FS.mkdir("/fxn");
-                    module.FS.writeFile(`/fxn/${resource.id}`, new Uint8Array(buffer));
-                }
-                // Create predictor
-                const pTag = module._malloc(tag.length + 1);
-                const ppPredictor = module._malloc(4);
-                module.stringToUTF8(tag, pTag, tag.length + 1);
-                status = module._FXNPredictorCreate(pTag, pConfiguration, ppPredictor);
-                module._free(pTag);
-                // Check status
-                if (status !== 0) {
-                    reject(`Function Error: Failed to create prediction for ${tag} with status: ${status}`);
-                    return;
-                }
-                // Get handle
-                const handle = module.getValue(ppPredictor, "*");
-                module._free(ppPredictor);
-                // Resolve
-                resolve({ module, handle });
             };
             document.body.appendChild(script);
         });
-        // Cache
-        this.cache.set(tag, predictor);
-        // Return
-        return predictor;
     }
 
-    private async predict (predictor: EdgePredictor, request: CreatePredictionInput): Promise<EdgePrediction> { // TODO // Logs and error
-        const { module, handle } = predictor;
-        const { tag, inputs } = request;
-        const results: PlainValue[] = [];
-        const startTime = performance.now();
-        const ppInputs = module._malloc(4);
-        const ppOutputs = module._malloc(4);
-        const pOutputCount = module._malloc(4);
+    private getConfigurationId (): string {
+        const fxnc = this.fxnc;
+        if (!fxnc)
+            return null;
+        const BUFFER_SIZE = 2048;
+        const pId = fxnc._malloc(BUFFER_SIZE);
+        const status = fxnc._FXNConfigurationGetUniqueID(pId, BUFFER_SIZE);
+        const id = status === 0 ? fxnc.UTF8ToString(pId, BUFFER_SIZE) : null;
+        fxnc._free(pId);
+        cassert(status, `Failed to generate prediction configuration identifier with status: ${status}`);
+        return id;
+    }
+
+    private async load (prediction: Prediction): Promise<number> { // INCOMPLETE
+        const { tag, resources, configuration } = prediction;
+        const fxnc = this.fxnc;
+        assert(fxnc, `Failed to create ${tag} prediction because Function implementation has not been loaded`);
+        assert(configuration, `Failed to create ${tag} prediction because configuration token is missing`);
+        const ppConfiguration = fxnc._malloc(4);
+        const ppPredictor = fxnc._malloc(4);
+        const pTag = fxnc._malloc(tag.length + 1);
+        const pToken = fxnc._malloc(configuration.length + 1);
+        let pConfiguration = 0;
+        try {
+            // Create configuration
+            let status = fxnc._FXNConfigurationCreate(ppConfiguration);
+            cassert(status, `Failed to create ${tag} prediction configuration with status: ${status}`);
+            pConfiguration = fxnc.getValue(ppConfiguration, "*");
+            // Set tag
+            fxnc.stringToUTF8(tag, pTag, tag.length + 1);
+            status = fxnc._FXNConfigurationSetTag(pConfiguration, pTag);
+            cassert(status, `Failed to set ${tag} prediction configuration tag with status: ${status}`);
+            // Set token
+            fxnc.stringToUTF8(configuration, pToken, configuration.length + 1);
+            status = fxnc._FXNConfigurationSetToken(pConfiguration, pToken);
+            cassert(status, `Failed to set ${tag} prediction configuration token with status: ${status}`);
+            // Add resources
+            fxnc.FS.mkdir(this.FXNC_CACHE_ROOT);
+            for (const resource of resources) {
+                // Check type
+                if (["fxn", "js"].includes(resource.type))
+                    continue;
+                // Get path
+                const name = getResourceName(resource.url);
+                const path = `${this.FXNC_CACHE_ROOT}/${name}`;
+                const stat = fxnc.FS.analyzePath(path);
+                // Download
+                if (!stat.exists || true) {
+                    const download = await fetch(resource.url);
+                    const buffer = await download.arrayBuffer();
+                    fxnc.FS.writeFile(path, new Uint8Array(buffer));
+                }
+                // Add
+                const pType = fxnc._malloc(resource.type.length + 1);
+                const pPath = fxnc._malloc(path.length + 1);
+                fxnc.stringToUTF8(resource.type, pType, resource.type.length + 1);
+                fxnc.stringToUTF8(path, pPath, path.length + 1);
+                const status = fxnc._FXNConfigurationAddResource(pConfiguration, pType, pPath);
+                fxnc._free(pType);
+                fxnc._free(pPath);
+                cassert(status, `Failed to set ${tag} prediction configuration resource '${name}' with status: ${status}`);
+            }
+            await new Promise<void>((res, rej) => fxnc.FS.syncfs(false, (err: any) => err ? rej(err) : res()));
+            // Create predictor
+            status = fxnc._FXNPredictorCreate(pConfiguration, ppPredictor);
+            cassert(status, `Failed to create prediction for ${tag} with status: ${status}`);   
+            // Get predictor
+            const predictor = fxnc.getValue(ppPredictor, "*");
+            // Return
+            return predictor;
+        } finally {
+            fxnc._FXNConfigurationRelease(pConfiguration);
+            fxnc._free(ppConfiguration);
+            fxnc._free(ppPredictor);
+            fxnc._free(pTag);
+            fxnc._free(pToken);
+        }
+    }
+
+    private async predict (
+        tag: string,
+        predictor: number,
+        inputs: Record<string, Value | PlainValue>
+    ): Promise<Prediction> {
+        const ID_BUFFER_SIZE = 2048;
+        const ERROR_BUFFER_SIZE = 2048;
+        const VALUE_NAME_BUFFER_SIZE = 256;
+        const fxnc = this.fxnc;
+        const ppPrediction = fxnc._malloc(4);
+        const ppInputs = fxnc._malloc(4);
+        const ppOutputs = fxnc._malloc(4);
+        const pOutputCount = fxnc._malloc(4);
+        const pId = fxnc._malloc(ID_BUFFER_SIZE);
+        const pError = fxnc._malloc(ERROR_BUFFER_SIZE);
+        const pLatency = fxnc._malloc(8);
+        const pLogLength = fxnc._malloc(4);
         let pInputs = 0;
-        let pOutputs = 0;
-        let status = 0;
+        let pPrediction = 0;
         try {
             // Create input map
-            status = module._FXNValueMapCreate(ppInputs);
-            if (status !== 0)
-                throw new Error(`Function failed to create prediction for ${tag} because input value map could not be created with status: ${status}`);
-            pInputs = module.getValue(ppInputs, "*");
+            let status = fxnc._FXNValueMapCreate(ppInputs);
+            cassert(status, `Failed to create ${tag} prediction because input value map could not be created with status: ${status}`);
             // Marshal inputs
+            pInputs = fxnc.getValue(ppInputs, "*");
             for (const [key, value] of Object.entries(inputs)) {
                 const pValue = valueToEdgeValue(value, module);
-                const pKey = module._malloc(key.length + 1);
-                module.stringToUTF8(key, pKey, key.length + 1);
-                module._FXNValueMapSetValue(pInputs, pKey, pValue);
-                module._free(pKey);
+                const pKey = fxnc._malloc(key.length + 1);
+                fxnc.stringToUTF8(key, pKey, key.length + 1);
+                status = fxnc._FXNValueMapSetValue(pInputs, pKey, pValue);
+                cassert(status, `Failed to create ${tag} prediction because input value '${key}' could not be created with status: ${status}`);
+                fxnc._free(pKey);
             }
             // Make prediction
-            status = module._FXNPredictorPredict(handle, pInputs, 0, ppOutputs);
-            if (status !== 0)
-                throw new Error(`Function failed to create prediction for ${tag} with status: ${status}`);
+            status = fxnc._FXNPredictorPredict(predictor, pInputs, ppPrediction);
+            cassert(status, `Failed to create ${tag} prediction with status: ${status}`);
+            pPrediction = fxnc.getValue(ppPrediction, "*");
+            // Get ID
+            status = fxnc._FXNPredictionGetID(pPrediction, pId, ID_BUFFER_SIZE);
+            cassert(status, `Failed to retrieve ${tag} prediction identifier with status: ${status}`);
+            const id = fxnc.UTF8ToString(pId, ID_BUFFER_SIZE);
+            // Get error
+            status = fxnc._FXNPredictionGetError(pPrediction, pError, ERROR_BUFFER_SIZE);
+            const error = status == 0 ? fxnc.UTF8ToString(pError, ERROR_BUFFER_SIZE) : null;
+            // Get latency
+            status = fxnc._FXNPredictionGetLatency(pPrediction, pLatency);
+            cassert(status, `Failed to retrieve ${tag} prediction latency with status: ${status}`);
+            const latency = fxnc.getValue(pLatency, "double");
+            // Get logs
+            status = fxnc._FXNPredictionGetLogLength(pPrediction, pLogLength);
+            cassert(status, `Failed to retrieve ${tag} prediction log length with status: ${status}`);
+            const logLength = fxnc.getValue(pLogLength, "i32") + 1;
+            const pLogs = fxnc._malloc(logLength);
+            status = fxnc._FXNPredictionGetLogs(pPrediction, pLogs, logLength);
+            const logs = status == 0 ? fxnc.UTF8ToString(pLogs, logLength) : null;
+            fxnc._free(pLogs);
             // Marshal outputs
-            pOutputs = module.getValue(ppOutputs, "*");
-            module._FXNValueMapGetSize(pOutputs, pOutputCount);
-            const outputCount = module.HEAP32[pOutputCount / 4];
+            status = fxnc._FXNPredictionGetResults(pPrediction, ppOutputs);
+            cassert(status, `Failed to retrieve ${tag} prediction results with status: ${status}`);
+            const pOutputs = fxnc.getValue(ppOutputs, "*");
+            status = fxnc._FXNValueMapGetSize(pOutputs, pOutputCount);
+            cassert(status, `Failed to retrieve ${tag} prediction result count with status: ${status}`);
+            const outputCount = fxnc.getValue(pOutputCount, "i32");
+            const results: PlainValue[] = outputCount > 0 ? [] : null;
             for (let idx = 0; idx < outputCount; idx++) {
-                const MAX_KEY_LEN = 256;
-                const pKey = module._malloc(MAX_KEY_LEN);
-                const ppValue = module._malloc(4);
-                module._FXNValueMapGetKey(pOutputs, idx, pKey, MAX_KEY_LEN);
-                module._FXNValueMapGetValue(pOutputs, pKey, ppValue);
-                const pValue = module.getValue(ppValue, "*");
+                // Get name
+                const pName = fxnc._malloc(VALUE_NAME_BUFFER_SIZE);
+                fxnc._FXNValueMapGetKey(pOutputs, idx, pName, VALUE_NAME_BUFFER_SIZE);
+                // Get value
+                const ppValue = fxnc._malloc(4);
+                fxnc._FXNValueMapGetValue(pOutputs, pName, ppValue);
+                const pValue = fxnc.getValue(ppValue, "*");
                 const value = edgeToPlainValue(pValue, module);
+                // Append
                 results.push(value);
-                module._free(pKey);
-                module._free(ppValue);
+                fxnc._free(pName);
+                fxnc._free(ppValue);
             }
             // Return
-            const latency = performance.now() - startTime;
-            return { results, latency, error: null, logs: "" };
-        } catch (error) {
-            throw error;
+            return {
+                id,
+                tag,
+                type: PredictorType.Edge,
+                created: new Date().toISOString() as unknown as Date,
+                results,
+                latency,
+                error,
+                logs
+            };
         } finally {
-            module._FXNValueMapRelease(pInputs);
-            module._FXNValueMapRelease(pOutputs);
-            module._free(ppInputs);
-            module._free(ppOutputs);
-            module._free(pOutputCount);
+            fxnc._FXNValueMapRelease(pInputs);
+            fxnc._FXNPredictionRelease(pPrediction);
+            fxnc._free(ppPrediction);
+            fxnc._free(ppInputs);
+            fxnc._free(ppOutputs);
+            fxnc._free(pOutputCount);
+            fxnc._free(pId);
+            fxnc._free(pError);
+            fxnc._free(pLatency);
+            fxnc._free(pLogLength);
         }
     }
 }
@@ -341,14 +425,10 @@ async function serializeCloudInputs (
     return result;
 }
 
-async function deserializeCloudOutputs (rawResults: Value[], rawOutputs: boolean): Promise<(Value | PlainValue)[]> {
-    // Check
-    if (!rawResults || rawOutputs)
-        return null;
-    // Deserialize
-    const results = await Promise.all(rawResults.map(value => toPlainValue({ value: value as Value })));
-    // Return
-    return results;
+async function parseResults (rawResults: Value[], rawOutputs: boolean): Promise<(Value | PlainValue)[]> {
+    return rawResults && !rawOutputs ? 
+        await Promise.all(rawResults.map(value => toPlainValue({ value: value as Value }))) :
+        rawResults;
 }
 
 function generateUniqueId () {
@@ -358,6 +438,7 @@ function generateUniqueId () {
     return uid;
 }
 
+/*
 function getConfigurationId () {
     // Browser
     if (typeof window !== "undefined") {
@@ -368,6 +449,24 @@ function getConfigurationId () {
         localStorage.setItem("__edgefxn", newId);
         return newId;
     }
+}
+*/
+
+function getResourceName (url: string): string {
+    return new URL(url).pathname.split("/").pop();
+}
+
+function sanitizeTag (tag: string): string {
+    return tag.substring(1).replace("-", "_").replace("/", "_");
+}
+
+function assert (condition: any, message: string) {
+    if (!condition)
+        throw new Error(`Function Error: ${message ?? "An unknown error occurred"}`);
+}
+
+function cassert (condition: number, message: string) {
+    assert(condition === 0, message);        
 }
 
 const client = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ?
