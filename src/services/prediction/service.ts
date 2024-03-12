@@ -48,6 +48,16 @@ export interface CreatePredictionInput {
      * Return a data URL if an output value is smaller than this limit (in bytes).
      */
     dataUrlLimit?: number;
+    /**
+     * Function client identifier.
+     * Specify this to override the current client identifier.
+     */
+    client?: string;
+    /**
+     * Configuration identifier.
+     * Specify this to override the current client configuration token.
+     */
+    configuration?: string;
 }
 
 export interface DeletePredictionInput {
@@ -79,11 +89,18 @@ export class PredictionService {
      * @returns Prediction.
      */
     public async create (input: CreatePredictionInput): Promise<Prediction> {
-        const { tag, inputs, rawOutputs, dataUrlLimit } = input;
         // Load fxnc
         this.fxnc = this.fxnc ?? await this.loadFxnc();
         // Check if cached
-        if (this.cache.has(tag))
+        const {
+            tag,
+            inputs,
+            rawOutputs,
+            dataUrlLimit,
+            client = CLIENT,
+            configuration = this.getConfigurationId()
+        } = input;
+        if (this.cache.has(tag) && !rawOutputs)
             return this.predict(tag, this.cache.get(tag), inputs);
         // Serialize inputs
         const values = await serializeCloudInputs(inputs, this.storage);
@@ -99,7 +116,7 @@ export class PredictionService {
                 "Content-Type": "application/json",
                 "Authorization": this.client.auth,
                 "fxn-client": client,
-                "fxn-configuration-token": this.getConfigurationId(),
+                "fxn-configuration-token": configuration,
             },
             body: JSON.stringify(values)
         });        
@@ -110,7 +127,7 @@ export class PredictionService {
         // Parse
         prediction.results = await parseResults(prediction.results, rawOutputs);
         // Check edge prediction
-        if (prediction.type !== PredictorType.Edge)
+        if (prediction.type !== PredictorType.Edge || rawOutputs)
             return prediction;
         // Load edge predictor
         const predictor = await this.load(prediction);
@@ -126,9 +143,21 @@ export class PredictionService {
      * @returns Generator which asynchronously returns prediction results as they are streamed from the predictor.
      */
     public async * stream (input: CreatePredictionInput): AsyncGenerator<Prediction> { // INCOMPLETE // Edge support
-        const { tag, inputs, rawOutputs, dataUrlLimit } = input;
         // Load fxnc
         this.fxnc = this.fxnc ?? await this.loadFxnc();
+        // Check if cached
+        const {
+            tag,
+            inputs,
+            rawOutputs,
+            dataUrlLimit,
+            client = CLIENT,
+            configuration = this.getConfigurationId()
+        } = input;
+        if (this.cache.has(tag) && !rawOutputs) {
+            yield this.predict(tag, this.cache.get(tag), inputs);
+            return;
+        }
         // Serialize inputs
         const values = await serializeCloudInputs(inputs, this.storage);
         // Request
@@ -143,7 +172,7 @@ export class PredictionService {
                 "Content-Type": "application/json",
                 "Authorization": this.client.auth,
                 "fxn-client": client,
-                "fxn-configuration-token": this.getConfigurationId(),
+                "fxn-configuration-token": configuration,
             },
             body: JSON.stringify(values)
         });
@@ -431,33 +460,8 @@ async function parseResults (rawResults: Value[], rawOutputs: boolean): Promise<
         rawResults;
 }
 
-function generateUniqueId () {
-    const buffer = new Uint8Array(16);
-    crypto.getRandomValues(buffer);
-    const uid = Array.from(buffer, byte => byte.toString(16).padStart(2, '0')).join('');
-    return uid;
-}
-
-/*
-function getConfigurationId () {
-    // Browser
-    if (typeof window !== "undefined") {
-        const currentId = localStorage.getItem("__edgefxn");
-        if (currentId)
-            return currentId;
-        const newId = generateUniqueId();
-        localStorage.setItem("__edgefxn", newId);
-        return newId;
-    }
-}
-*/
-
 function getResourceName (url: string): string {
     return new URL(url).pathname.split("/").pop();
-}
-
-function sanitizeTag (tag: string): string {
-    return tag.substring(1).replace("-", "_").replace("/", "_");
 }
 
 function assert (condition: any, message: string) {
@@ -469,7 +473,7 @@ function cassert (condition: number, message: string) {
     assert(condition === 0, message);        
 }
 
-const client = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ?
+const CLIENT = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ?
     "edge" : // e.g. Vercel Serverless Functions with edge runtime
     "webworker" :
     "node" :

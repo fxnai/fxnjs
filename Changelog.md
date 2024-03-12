@@ -1,5 +1,6 @@
 ## 0.0.26
-*INCOMPLETE*
++ Added `CreatePredictionInput.client` field for overriding client identifier when making predictions.
++ Added `CreatePredictionInput.configuration` field for overriding configuration identifier when making predictions.
 
 ## 0.0.25
 + Removed `AccessMode.Protected` access mode. Use `AccessMode.Public` or `AccessMode.Private` instead.
