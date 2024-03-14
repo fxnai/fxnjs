@@ -1,3 +1,6 @@
+## 0.0.27
+*INCOMPLETE*
+
 ## 0.0.26
 + Added `CreatePredictionInput.client` field for overriding client identifier when making predictions.
 + Added `CreatePredictionInput.configuration` field for overriding configuration identifier when making predictions.
