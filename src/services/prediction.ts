@@ -4,11 +4,10 @@
 */
 
 import { isBrowser, isDeno, isNode, isWebWorker } from "browser-or-node"
-import { GraphClient } from "../../graph"
-import { Prediction, PlainValue, Value, PredictorType } from "../../types"
-import { toFunctionValue, toPlainValue } from "../value"
-import { StorageService } from "../storage"
-import { toPlainValue as edgeToPlainValue, toFunctionValue as valueToEdgeValue } from "./edge"
+import { GraphClient } from "../graph"
+import { Image, PlainValue, Prediction, PredictorType, Tensor, TypedArray, Value } from "../types"
+import { isFunctionValue, isImage, isTensor, toFunctionValue, toPlainValue } from "./value"
+import { StorageService } from "./storage"
 
 export const PREDICTION_FIELDS = `
 id
@@ -73,9 +72,10 @@ export class PredictionService {
     private readonly storage: StorageService;
     private readonly cache: Map<string, number>;
     private fxnc: any;
-    private readonly FXNC_VERSION = "0.0.11";
     private readonly FXNC_DATA_ROOT = "/fxn";
     private readonly FXNC_CACHE_ROOT = `${this.FXNC_DATA_ROOT}/cache`;
+    private readonly FXNC_VERSION = "0.0.11";
+    private readonly FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/edgefxn/${this.FXNC_VERSION}`;
 
     public constructor (client: GraphClient, storage: StorageService) {
         this.client = client;
@@ -214,23 +214,19 @@ export class PredictionService {
         return status === 0;
     }
 
-    private async loadFxnc (): Promise<any> {
-        // INCOMPLETE // Disable for now
-        if (true)
-            return null;
+    private async loadFxnc (): Promise<any> { // INCOMPLETE // Mount IDBFS for caching
         // Check env
         if (!isBrowser)
             return null;
         // Load
-        const FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/edgefxn/${this.FXNC_VERSION}`;
         return new Promise((resolve, reject) => {
             const script = document.createElement("script");
-            script.src = `${FXNC_LIB_URL_BASE}/Function.js`;
+            script.src = `${this.FXNC_LIB_URL_BASE}/Function.js`;
             script.onerror = error => reject(`Function Error: Failed to load Function implementation for in-browser predictions with error: ${error}`);
             script.onload = async () => {
                 // Get loader
                 const name = "__fxn";
-                const locateFile = (path: string) => path === "Function.wasm" ? `${FXNC_LIB_URL_BASE}/Function.wasm` : path;
+                const locateFile = (path: string) => path === "Function.wasm" ? `${this.FXNC_LIB_URL_BASE}/Function.wasm` : path;
                 const moduleLoader = (window as any)[name];
                 (window as any)[name] = null;
                 try {
@@ -239,6 +235,7 @@ export class PredictionService {
                     // Mount fs
                     fxnc.FS.mkdir(this.FXNC_DATA_ROOT);
                     //fxnc.FS.mount(fxnc.IDBFS, {}, this.FXNC_DATA_ROOT);
+                    fxnc.FS.mkdir(this.FXNC_CACHE_ROOT);
                     await new Promise<void>((res, rej) => fxnc.FS.syncfs(true, (err: any) => err ? rej(err) : res()));
                     // Resolve
                     resolve(fxnc);
@@ -265,7 +262,7 @@ export class PredictionService {
         return id;
     }
 
-    private async load (prediction: Prediction): Promise<number> { // INCOMPLETE
+    private async load (prediction: Prediction): Promise<number> {
         const { tag, resources, configuration } = prediction;
         const fxnc = this.fxnc;
         assert(fxnc, `Failed to create ${tag} prediction because Function implementation has not been loaded`);
@@ -289,7 +286,6 @@ export class PredictionService {
             status = fxnc._FXNConfigurationSetToken(pConfiguration, pToken);
             cassert(status, `Failed to set ${tag} prediction configuration token with status: ${status}`);
             // Add resources
-            fxnc.FS.mkdir(this.FXNC_CACHE_ROOT);
             for (const resource of resources) {
                 // Check type
                 if (["fxn", "js"].includes(resource.type))
@@ -299,7 +295,7 @@ export class PredictionService {
                 const path = `${this.FXNC_CACHE_ROOT}/${name}`;
                 const stat = fxnc.FS.analyzePath(path);
                 // Download
-                if (!stat.exists || true) {
+                if (!stat.exists) {
                     const download = await fetch(resource.url);
                     const buffer = await download.arrayBuffer();
                     fxnc.FS.writeFile(path, new Uint8Array(buffer));
@@ -313,6 +309,8 @@ export class PredictionService {
                 fxnc._free(pType);
                 fxnc._free(pPath);
                 cassert(status, `Failed to set ${tag} prediction configuration resource '${name}' with status: ${status}`);
+                // Preload so Chrome doesn't bark at us
+                await fxnc._FXNPreloadResource(path);
             }
             await new Promise<void>((res, rej) => fxnc.FS.syncfs(false, (err: any) => err ? rej(err) : res()));
             // Create predictor
@@ -357,7 +355,7 @@ export class PredictionService {
             // Marshal inputs
             pInputs = fxnc.getValue(ppInputs, "*");
             for (const [key, value] of Object.entries(inputs)) {
-                const pValue = valueToEdgeValue(value, module);
+                const pValue = this.plainToEdgeValue(value);
                 const pKey = fxnc._malloc(key.length + 1);
                 fxnc.stringToUTF8(key, pKey, key.length + 1);
                 status = fxnc._FXNValueMapSetValue(pInputs, pKey, pValue);
@@ -403,7 +401,7 @@ export class PredictionService {
                 const ppValue = fxnc._malloc(4);
                 fxnc._FXNValueMapGetValue(pOutputs, pName, ppValue);
                 const pValue = fxnc.getValue(ppValue, "*");
-                const value = edgeToPlainValue(pValue, module);
+                const value = this.edgeToPlainValue(pValue);
                 // Append
                 results.push(value);
                 fxnc._free(pName);
@@ -431,6 +429,164 @@ export class PredictionService {
             fxnc._free(pError);
             fxnc._free(pLatency);
             fxnc._free(pLogLength);
+        }
+    }
+
+    plainToEdgeValue (value: PlainValue | Value): number {
+        const fxnc = this.fxnc;
+        const ppValue = fxnc._malloc(4);
+        try {
+            // Null
+            if (value === null) {
+                const status = fxnc._FXNValueCreateNull(ppValue);
+                cassert(status, `Failed to create null value with status: ${status}`);
+                return fxnc.getValue(ppValue, "*");
+            }
+            // Value
+            if (isFunctionValue(value))
+                assert(false, `Function 'Value' is not yet supported as edge prediction input`);
+            // Tensor
+            if (isTensor(value)) {
+                const { data, shape } = value;
+                const dtype = dtypeFromTypedArray(data);
+                const elementCount = shape.reduce((a, b) => a * b, 1);
+                const pBuffer = fxnc._malloc(data.byteLength);
+                const pShape = fxnc._malloc(elementCount * Int32Array.BYTES_PER_ELEMENT);
+                const srcView = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+                const dstView = new Uint8Array(fxnc.HEAPU8.buffer, pBuffer, data.byteLength);
+                const shapeView = new Int32Array(fxnc.HEAP32.buffer, pShape, elementCount);
+                dstView.set(srcView);
+                shapeView.set(shape);
+                const status = fxnc._FXNValueCreateArray(pBuffer, pShape, shape.length, dtype, 1, ppValue);
+                fxnc._free(pBuffer);
+                fxnc._free(pShape);
+                cassert(status, `Failed to create array value with status: ${status}`);
+                return fxnc.getValue(ppValue, "*");
+            }
+            // Typed array
+            if (ArrayBuffer.isView(value)) {
+                const byteSize = (value.constructor as any).BYTES_PER_ELEMENT;
+                const elements = value.byteLength / byteSize;
+                return this.plainToEdgeValue({ data: value, shape: [elements] });
+            }
+            // Binary
+            if (value instanceof ArrayBuffer) {
+                const pBuffer = fxnc._malloc(value.byteLength);
+                const srcView = new Uint8Array(value);
+                const dstView = new Uint8Array(fxnc.HEAPU8.buffer, pBuffer, value.byteLength);
+                dstView.set(srcView);
+                const status = fxnc._FXNValueCreateBinary(pBuffer, value.byteLength, 1, ppValue);
+                fxnc._free(pBuffer);
+                cassert(status, `Failed to create binary value with status: ${status}`);
+                return fxnc.getValue(ppValue, "*");
+            }
+            // String
+            if (typeof(value) === "string") {
+                const length = fxnc.lengthBytesUTF8(value) + 1;
+                const pStr = fxnc._malloc(length);
+                fxnc.stringToUTF8(value, pStr, length);
+                const status = fxnc._FXNValueCreateString(pStr, ppValue);
+                fxnc._free(pStr);
+                cassert(status, `Failed to create string value with status: ${status}`);
+                return fxnc.getValue(ppValue, "*");
+            }
+            // Number
+            if (typeof(value) === "number") {
+                const data = Number.isInteger(value) ? new Int32Array([value]) : new Float32Array([value]);
+                return this.plainToEdgeValue({ data, shape: [] });
+            }
+            // Bigint
+            if (typeof(value) === "bigint") {
+                const data = new BigInt64Array([value]);
+                return this.plainToEdgeValue({ data, shape: [] });
+            }
+            // Boolean
+            if (typeof(value) === "boolean")
+                return this.plainToEdgeValue({ data: new BoolArray([+value]), shape: [] });
+            // Image
+            if (isImage(value)) {
+                const { data, width, height } = value;
+                const bufferSize = width * height * 4;
+                const pBuffer = fxnc._malloc(bufferSize);
+                const dstView = new Uint8Array(fxnc.HEAPU8.buffer, pBuffer, bufferSize);
+                dstView.set(data);
+                const status = fxnc._FXNValueCreateImage(pBuffer, width, height, 1, ppValue);
+                fxnc._free(pBuffer);
+                cassert(status, `Failed to create image value with status: ${status}`);
+                return fxnc.getValue(ppValue, "*");
+            }
+            // List
+            if (Array.isArray(value)) {
+                const serializedValue = JSON.stringify(value);
+                const length = fxnc.lengthBytesUTF8(serializedValue) + 1;
+                const pStr = fxnc._malloc(length);
+                fxnc.stringToUTF8(serializedValue, pStr, length);
+                const status = fxnc._FXNValueCreateList(pStr, ppValue);
+                fxnc._free(pStr);
+                cassert(status, `Failed to create list value with status: ${status}`);
+                return fxnc.getValue(ppValue, "*");
+            }
+            // Dict
+            if (typeof(value) === "object") {
+                const serializedValue = JSON.stringify(value);
+                const length = fxnc.lengthBytesUTF8(serializedValue) + 1;
+                const pStr = fxnc._malloc(length);
+                fxnc.stringToUTF8(serializedValue, pStr, length);
+                const status = fxnc._FXNValueCreateDict(pStr, ppValue);
+                fxnc._free(pStr);
+                cassert(status, `Failed to create dict value with status: ${status}`);
+                return fxnc.getValue(ppValue, "*");
+            }
+            // Unknown
+            assert(false, `Failed to create edge prediction value for unsupported type: ${typeof(value)}`);
+        } finally {
+            fxnc._free(ppValue);
+        }
+    }
+
+    private edgeToPlainValue (pValue: number): PlainValue {
+        const fxnc = this.fxnc;
+        const ppData = fxnc._malloc(4);
+        const pType = fxnc._malloc(4);
+        const pDims = fxnc._malloc(4);
+        fxnc._FXNValueGetData(pValue, ppData);
+        fxnc._FXNValueGetType(pValue, pType);
+        fxnc._FXNValueGetDimensions(pValue, pDims);
+        const pData = fxnc.getValue(ppData, "*");
+        const type = fxnc.getValue(pType, "i32");
+        const dims = fxnc.getValue(pDims, "i32");
+        const pShape = fxnc._malloc(dims * 4);
+        fxnc._FXNValueGetShape(pValue, pShape, dims);
+        const shapeArray = new Int32Array(fxnc.HEAP32.buffer, pShape, dims);
+        const shape = [...shapeArray];
+        const elementCount = shape.reduce((a, b) => a * b, 1);
+        try {
+            switch(type) {
+                case Dtype.Null:    return null;
+                case Dtype.Float16: throw new Error(`Cannot convert prediction output of type 'float16' to value because it is not supported`);
+                case Dtype.Float32: return toTensorOrNumber(new Float32Array(fxnc.HEAPF32.buffer, pData, elementCount), shape);
+                case Dtype.Float64: return toTensorOrNumber(new Float64Array(fxnc.HEAPF64.buffer, pData, elementCount), shape);
+                case Dtype.Int8:    return toTensorOrNumber(new Int8Array(fxnc.HEAP8.buffer, pData, elementCount), shape);
+                case Dtype.Int16:   return toTensorOrNumber(new Int16Array(fxnc.HEAP16.buffer, pData, elementCount), shape);
+                case Dtype.Int32:   return toTensorOrNumber(new Int32Array(fxnc.HEAP32.buffer, pData, elementCount), shape);
+                case Dtype.Int64:   return toTensorOrNumber(new BigInt64Array(fxnc.HEAP8.buffer, pData, elementCount), shape);
+                case Dtype.Uint8:   return toTensorOrNumber(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount), shape);
+                case Dtype.Uint16:  return toTensorOrNumber(new Uint16Array(fxnc.HEAPU16.buffer, pData, elementCount), shape);
+                case Dtype.Uint32:  return toTensorOrNumber(new Uint32Array(fxnc.HEAPU32.buffer, pData, elementCount), shape);
+                case Dtype.Uint64:  return toTensorOrNumber(new BigUint64Array(fxnc.HEAP8.buffer, pData, elementCount), shape);
+                case Dtype.Bool:    return toTensorOrBoolean(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount), shape);
+                case Dtype.String:  return fxnc.UTF8ToString(pData);
+                case Dtype.List:    return JSON.parse(fxnc.UTF8ToString(pData));
+                case Dtype.Dict:    return JSON.parse(fxnc.UTF8ToString(pData));
+                case Dtype.Image:   return toImage(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount), shape);
+                case Dtype.Binary:  return toArrayBuffer(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount));
+                default:            throw new Error(`Cannot convert prediction output to value because of unknown type: ${type}`);
+            }
+        } finally {
+            fxnc._free(ppData);
+            fxnc._free(pType);
+            fxnc._free(pDims);
+            fxnc._free(pShape);
         }
     }
 }
@@ -464,6 +620,46 @@ function getResourceName (url: string): string {
     return new URL(url).pathname.split("/").pop();
 }
 
+function cloneTypedArray<T extends TypedArray> (input: T): T {
+    const constructor = input.constructor as any;
+    const buffer = new constructor(input.length);
+    buffer.set(input);
+    return buffer;
+}
+
+function toTensorOrNumber (data: TypedArray, shape: number[]): number | bigint | Tensor {
+    return shape.length > 0 ? { data: cloneTypedArray(data), shape } : data[0];
+}
+
+function toTensorOrBoolean (data: Uint8Array, shape: number[]): boolean | Tensor {
+    const res = toTensorOrNumber(data, shape);
+    return typeof res === "number" ? !!res : res as Tensor;
+}
+
+function toImage (data: Uint8Array, shape: number[]): Image {
+    return { data: cloneTypedArray(data), width: shape[2], height: shape[1] };
+}
+
+function toArrayBuffer (data: Uint8Array): ArrayBuffer {
+    return cloneTypedArray(data).buffer;
+}
+
+function dtypeFromTypedArray (data: TypedArray | ArrayBuffer): Dtype {
+    if (data instanceof BoolArray)          return Dtype.Bool;
+    if (data instanceof Float32Array)       return Dtype.Float32;
+    if (data instanceof Float64Array)       return Dtype.Float64;
+    if (data instanceof Int8Array)          return Dtype.Int8;
+    if (data instanceof Int16Array)         return Dtype.Int16;
+    if (data instanceof Int32Array)         return Dtype.Int32;
+    if (data instanceof BigInt64Array)      return Dtype.Int64;
+    if (data instanceof Uint8Array)         return Dtype.Uint8;
+    if (data instanceof Uint8ClampedArray)  return Dtype.Uint8;
+    if (data instanceof Uint16Array)        return Dtype.Uint16;
+    if (data instanceof Uint32Array)        return Dtype.Uint32;
+    if (data instanceof BigUint64Array)     return Dtype.Uint64;
+    throw new Error("Unsupported TypedArray or ArrayBuffer type");
+}
+
 function assert (condition: any, message: string) {
     if (!condition)
         throw new Error(`Function Error: ${message ?? "An unknown error occurred"}`);
@@ -479,3 +675,26 @@ const CLIENT = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ?
     "node" :
     "deno" :
     "browser";
+
+const enum Dtype {
+    Null = 0,
+    Float16 = 1,
+    Float32 = 2,
+    Float64 = 3,
+    Int8 = 4,
+    Int16 = 5,
+    Int32 = 6,
+    Int64 = 7,
+    Uint8 = 8,
+    Uint16 = 9,
+    Uint32 = 10,
+    Uint64 = 11,
+    Bool = 12,
+    String = 13,
+    List = 14,
+    Dict = 15,
+    Image = 16,
+    Binary = 17
+}
+
+class BoolArray extends Uint8Array { }

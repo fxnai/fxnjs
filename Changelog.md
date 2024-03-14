@@ -1,6 +1,7 @@
 ## 0.0.26
 + Added `CreatePredictionInput.client` field for overriding client identifier when making predictions.
 + Added `CreatePredictionInput.configuration` field for overriding configuration identifier when making predictions.
++ Fixed certain edge predictors failing to be loaded on Google Chrome due to size restrictions.
 
 ## 0.0.25
 + Removed `AccessMode.Protected` access mode. Use `AccessMode.Public` or `AccessMode.Private` instead.
