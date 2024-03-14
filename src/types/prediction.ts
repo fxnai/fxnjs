@@ -64,4 +64,8 @@ export interface PredictionResource {
      * Resource URL.
      */
     url: string;
+    /**
+     * Resource name.
+     */
+    name?: string;
 }

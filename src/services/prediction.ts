@@ -291,7 +291,7 @@ export class PredictionService {
                 if (["fxn", "js"].includes(resource.type))
                     continue;
                 // Get path
-                const name = getResourceName(resource.url);
+                const name = resource.name ?? getResourceName(resource.url);
                 const path = `${this.FXNC_CACHE_ROOT}/${name}`;
                 const stat = fxnc.FS.analyzePath(path);
                 // Download

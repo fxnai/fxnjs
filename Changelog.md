@@ -1,6 +1,7 @@
 ## 0.0.26
 + Added `CreatePredictionInput.client` field for overriding client identifier when making predictions.
 + Added `CreatePredictionInput.configuration` field for overriding configuration identifier when making predictions.
++ Added `PredictionResource.name` field for handling resources with required file names.
 + Fixed certain edge predictors failing to be loaded on Google Chrome due to size restrictions.
 
 ## 0.0.25
