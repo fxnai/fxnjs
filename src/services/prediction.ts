@@ -74,7 +74,7 @@ export class PredictionService {
     private fxnc: any;
     private readonly FXNC_DATA_ROOT = "/fxn";
     private readonly FXNC_CACHE_ROOT = `${this.FXNC_DATA_ROOT}/cache`;
-    private readonly FXNC_VERSION = "0.0.12";
+    private readonly FXNC_VERSION = "0.0.13";
     private readonly FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/edgefxn/${this.FXNC_VERSION}`;
 
     public constructor (client: GraphClient, storage: StorageService) {
@@ -310,7 +310,8 @@ export class PredictionService {
                 fxnc._free(pPath);
                 cassert(status, `Failed to set ${tag} prediction configuration resource '${name}' with status: ${status}`);
                 // Preload so Chrome doesn't bark at us
-                await fxnc._FXNPreloadResource(path);
+                if (resource.type === "dso")
+                    await fxnc._FXNPreloadResource(path);
             }
             await new Promise<void>((res, rej) => fxnc.FS.syncfs(false, (err: any) => err ? rej(err) : res()));
             // Create predictor
