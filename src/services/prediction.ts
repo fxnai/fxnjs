@@ -103,13 +103,9 @@ export class PredictionService {
         if (this.cache.has(tag) && !rawOutputs)
             return this.predict(tag, this.cache.get(tag), inputs);
         // Serialize inputs
-        const values = await serializeCloudInputs(inputs, this.storage);
-        // Build URL
-        const url = new URL(`/predict/${tag}`, this.client.url);
-        url.searchParams.append("rawOutputs", "true");
-        if (dataUrlLimit)
-            url.searchParams.append("dataUrlLimit", dataUrlLimit.toString());
+        const values = await serializeCloudInputs(inputs, this.storage);        
         // Query
+        const url = this.getPredictUrl(tag, { rawOutputs: true, dataUrlLimit });
         const response = await fetch(url, {
             method: "POST",
             headers: {
@@ -161,11 +157,7 @@ export class PredictionService {
         // Serialize inputs
         const values = await serializeCloudInputs(inputs, this.storage);
         // Request
-        const url = new URL(`/predict/${tag}`, this.client.url);
-        url.searchParams.append("rawOutputs", "true");
-        url.searchParams.append("stream", "true");
-        if (dataUrlLimit)
-            url.searchParams.append("dataUrlLimit", dataUrlLimit.toString());
+        const url = this.getPredictUrl(tag, { stream: true, rawOutputs: true, dataUrlLimit });
         const response = await fetch(url, {
             method: "POST",
             headers: {
@@ -433,7 +425,7 @@ export class PredictionService {
         }
     }
 
-    plainToEdgeValue (value: PlainValue | Value): number {
+    private plainToEdgeValue (value: PlainValue | Value): number {
         const fxnc = this.fxnc;
         const ppValue = fxnc._malloc(4);
         try {
@@ -589,6 +581,14 @@ export class PredictionService {
             fxnc._free(pDims);
             fxnc._free(pShape);
         }
+    }
+
+    private getPredictUrl (tag: string, query: Record<string, boolean | string | number>) {
+        const qs = Object.entries(query)
+            .filter(([key, value]) => value != null)
+            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+            .join("&");
+        return `${this.client.url}/predict/${tag}?${qs}`;
     }
 }
 
