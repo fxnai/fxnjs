@@ -1,5 +1,5 @@
 ## 0.0.27
-*INCOMPLETE*
++ Minor updates.
 
 ## 0.0.26
 + Added `CreatePredictionInput.client` field for overriding client identifier when making predictions.
