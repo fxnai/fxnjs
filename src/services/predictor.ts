@@ -126,14 +126,14 @@ export class PredictorService {
      * @returns Predictor.
      */
     public async retrieve (input: RetrievePredictorInput): Promise<Predictor> {
-        const { data: { predictor } } = await this.client.query<{ predictor: Predictor }>(
-            `query ($input: PredictorInput!) {
+        const { data: { predictor } } = await this.client.query<{ predictor: Predictor }>({
+            query: `query ($input: PredictorInput!) {
                 predictor (input: $input) {
                     ${PREDICTOR_FIELDS}
                 }
             }`,
-            { input }
-        );
+            variables: { input }
+        });
         return predictor;
     }
 
@@ -144,16 +144,16 @@ export class PredictorService {
      */
     public async list (input?: ListPredictorsInput): Promise<Predictor[]> {
         const { owner: username, ...predictors } = input ?? { };
-        const { data: { user } } = await this.client.query<{ user: { predictors: Predictor[] } }>(
-            `query ($user: UserInput, $predictors: UserPredictorsInput) {
+        const { data: { user } } = await this.client.query<{ user: { predictors: Predictor[] } }>({
+            query: `query ($user: UserInput, $predictors: UserPredictorsInput) {
                 user (input: $user) {
                     predictors (input: $predictors) {
                         ${PREDICTOR_FIELDS}
                     }
                 }
             }`,
-            { user: username && { username }, predictors }
-        );
+            variables: { user: username && { username }, predictors }
+        });
         return user?.predictors ?? null;
     }
 
@@ -163,14 +163,14 @@ export class PredictorService {
      * @returns Predictors.
      */
     public async search (input?: SearchPredictorsInput): Promise<Predictor[]> {
-        const { data: { predictors } } = await this.client.query<{ predictors: Predictor[] }>(
-            `query ($input: PredictorsInput) {
+        const { data: { predictors } } = await this.client.query<{ predictors: Predictor[] }>({
+            query: `query ($input: PredictorsInput) {
                 predictors (input: $input) {
                     ${PREDICTOR_FIELDS}
                 }
             }`,
-            { input }
-        );
+            variables: { input }
+        });
         return predictors;
     }
 
@@ -180,14 +180,14 @@ export class PredictorService {
      * @returns Predictor.
      */
     public async create (input: CreatePredictorInput): Promise<Predictor> {
-        const { data: { predictor } } = await this.client.query<{ predictor: Predictor }>(
-            `mutation ($input: CreatePredictorInput!) {
+        const { data: { predictor } } = await this.client.query<{ predictor: Predictor }>({
+            query: `mutation ($input: CreatePredictorInput!) {
                 predictor: createPredictor (input: $input) {
                     ${PREDICTOR_FIELDS}
                 }
             }`,
-            { input }
-        );
+            variables: { input }
+        });
         return predictor;
     }
 
@@ -197,12 +197,12 @@ export class PredictorService {
      * @returns Whether the predictor was successfully deleted.
      */
     public async delete (input: DeletePredictorInput): Promise<boolean> {
-        const { data: { result } } = await this.client.query<{ result: boolean }>(
-            `mutation ($input: DeletePredictorInput!) {
+        const { data: { result } } = await this.client.query<{ result: boolean }>({
+            query: `mutation ($input: DeletePredictorInput!) {
                 result: deletePredictor (input: $input)
             }`,
-            { input }
-        );
+            variables: { input }
+        });
         return result;
     }
 
@@ -212,14 +212,14 @@ export class PredictorService {
      * @returns Archived predictor.
      */
     public async archive (input: ArchivePredictorInput): Promise<Predictor> {
-        const { data: { predictor } } = await this.client.query<{ predictor: Predictor }>(
-            `mutation ($input: ArchivePredictorInput!) {
+        const { data: { predictor } } = await this.client.query<{ predictor: Predictor }>({
+            query: `mutation ($input: ArchivePredictorInput!) {
                 archivePredictor (input: $input) {
                     ${PREDICTOR_FIELDS}
                 }
             }`,
-            { input }
-        );
+            variables: { input }
+        });
         return predictor;
     }
 }

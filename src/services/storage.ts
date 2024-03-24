@@ -71,12 +71,13 @@ export class StorageService {
      * @returns Upload URL.
      */
     public async createUploadUrl (input: CreateUploadURLInput): Promise<string> {
-        const { data: { url } } = await this.client.query<{ url: string }>(
-            `mutation ($input: CreateUploadUrlInput!) {
+        const { data: { url } } = await this.client.query<{ url: string }>({
+            query: `mutation ($input: CreateUploadUrlInput!) {
                 url: createUploadUrl (input: $input)
             }`,
-            { input }
-        );
+            variables: { input },
+            url: `${GraphClient.URL}/graph`
+        });
         return url;
     }
 

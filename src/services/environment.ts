@@ -57,8 +57,8 @@ export class EnvironmentVariableService {
      * @returns Environment variables.
      */
     public async list (input?: ListEnvironmentVariablesInput): Promise<EnvironmentVariable[]> {
-        const { data: { user } } = await this.client.query<{ user: { environmentVariables: EnvironmentVariable[] } }>(
-            `query ($input: UserInput) {
+        const { data: { user } } = await this.client.query<{ user: { environmentVariables: EnvironmentVariable[] } }>({
+            query: `query ($input: UserInput) {
                 user (input: $input) {
                     ... on User {
                         environmentVariables {
@@ -72,8 +72,8 @@ export class EnvironmentVariableService {
                     }
                 }
             }`,
-            { input }
-        );
+            variables: { input }
+        });
         return user?.environmentVariables ?? null;
     }
 
@@ -83,14 +83,14 @@ export class EnvironmentVariableService {
      * @returns Created environment variable.
      */
     public async create (input: CreateEnvironmentVariableInput): Promise<EnvironmentVariable> {
-        const { data: { environment } } = await this.client.query<{ environment: EnvironmentVariable }>(
-            `mutation ($input: CreateEnvironmentVariableInput!) {
+        const { data: { environment } } = await this.client.query<{ environment: EnvironmentVariable }>({
+            query: `mutation ($input: CreateEnvironmentVariableInput!) {
                 environment: createEnvironmentVariable (input: $input) {
                     name
                 }
             }`,
-            { input }
-        );
+            variables: { input }
+        });
         return environment;
     }
 
@@ -100,12 +100,12 @@ export class EnvironmentVariableService {
      * @returns Whether environment variable was successfully deleted.
      */
     public async delete (input: DeleteEnvironmentVariableInput): Promise<boolean> {
-        const { data: { result } } = await this.client.query<{ result: boolean }>(
-            `mutation ($input: DeleteEnvironmentVariableInput!) {
+        const { data: { result } } = await this.client.query<{ result: boolean }>({
+            query: `mutation ($input: DeleteEnvironmentVariableInput!) {
                 result: deleteEnvironmentVariable (input: $input)
             }`,
-            { input }
-        );
+            variables: { input }
+        });
         return result;
     }
 }

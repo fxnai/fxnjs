@@ -55,15 +55,15 @@ export class UserService {
      */
     public async retrieve (input?: RetrieveUserInput): Promise<Profile | User> {
         const username = input?.username;
-        const { data: { user } } = await this.client.query<{ user: Profile | User }>(
-            `query ($input: UserInput) {
+        const { data: { user } } = await this.client.query<{ user: Profile | User }>({
+            query: `query ($input: UserInput) {
                 user (input: $input) {
                     ${PROFILE_FIELDS}
                     ${!username ? USER_FIELDS : ""}
                 }
             }`,
-            { input }
-        );
+            variables: { input }
+        });
         return user;
     }
 
@@ -73,15 +73,15 @@ export class UserService {
      * @returns Updated user profile.
      */
     public async update (input: UpdateUserInput): Promise<User> {
-        const { data: { user } } = await this.client.query<{ user: User }>(
-            `mutation ($input: UpdateUserInput!) {
+        const { data: { user } } = await this.client.query<{ user: User }>({
+            query: `mutation ($input: UpdateUserInput!) {
                 user: updateUser (input: $input) {
                     ${PROFILE_FIELDS}
                     ${USER_FIELDS}
                 }
             }`,
-            { input }
-        );
+            variables: { input }
+        });
         return user;
     }
 }

@@ -30,6 +30,15 @@ class StorageTest {
     }
 
     @mocha.test
+    async "Should create upload URL regardless of proxying" () {
+        const name = "stablediffusion.ipynb";
+        const type = UploadType.Notebook;
+        const fxn = new Function({ url: "https://www.google.com" });
+        const url = await fxn.storage.createUploadUrl({ name, type });
+        expect(url).to.not.be.null;
+    }
+
+    @mocha.test
     async "Should create data URL" () {
         const fileBuffer = readFileSync("test/media/cat_224.jpg");
         // Create data URL

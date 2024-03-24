@@ -4,9 +4,10 @@
 */
 
 import { isBrowser, isDeno, isNode, isWebWorker } from "browser-or-node"
+import parseDataURL from "data-urls"
 import { GraphClient } from "../graph"
-import { Image, PlainValue, Prediction, PredictorType, Tensor, TypedArray, Value } from "../types"
-import { isFunctionValue, isImage, isTensor, toFunctionValue, toPlainValue } from "./value"
+import { Dtype, Image, PlainValue, Prediction, PredictorType, Tensor, TypedArray, UploadType, Value } from "../types"
+import { isFunctionValue, isImage, isTensor, isTypedArray } from "./value"
 import { StorageService } from "./storage"
 
 export const PREDICTION_FIELDS = `
@@ -66,6 +67,29 @@ export interface DeletePredictionInput {
     tag: string;
 }
 
+export interface ToValueInput {
+    /**
+     * Input value.
+     */
+    value: Value | PlainValue;
+    /**
+     * Value name.
+     */
+    name: string;
+    /**
+     * Value larger than this size in bytes will be uploaded.
+     */
+    minUploadSize?: number;
+    key?: string;
+}
+
+export interface ToObjectInput {
+    /**
+     * Function value.
+     */
+    value: Value;
+}
+
 export class PredictionService {
 
     private readonly client: GraphClient;
@@ -103,7 +127,7 @@ export class PredictionService {
         if (this.cache.has(tag) && !rawOutputs)
             return this.predict(tag, this.cache.get(tag), inputs);
         // Serialize inputs
-        const values = await serializeCloudInputs(inputs, this.storage);        
+        const values = await this.serializeCloudInputs(inputs, dataUrlLimit);        
         // Query
         const url = this.getPredictUrl(tag, { rawOutputs: true, dataUrlLimit });
         const response = await fetch(url, {
@@ -121,7 +145,7 @@ export class PredictionService {
         if (!response.ok)
             throw new Error(prediction.errors?.[0].message ?? "An unknown error occurred");
         // Parse
-        prediction.results = await parseResults(prediction.results, rawOutputs);
+        prediction.results = await this.parseResults(prediction.results, rawOutputs);
         // Check edge prediction
         if (prediction.type !== PredictorType.Edge || rawOutputs)
             return prediction;
@@ -138,7 +162,7 @@ export class PredictionService {
      * @param input Prediction input.
      * @returns Generator which asynchronously returns prediction results as they are streamed from the predictor.
      */
-    public async * stream (input: CreatePredictionInput): AsyncGenerator<Prediction> { // INCOMPLETE // Edge support
+    public async * stream (input: CreatePredictionInput): AsyncGenerator<Prediction> {
         // Load fxnc
         this.fxnc = this.fxnc ?? await this.loadFxnc();
         // Check if cached
@@ -155,7 +179,7 @@ export class PredictionService {
             return;
         }
         // Serialize inputs
-        const values = await serializeCloudInputs(inputs, this.storage);
+        const values = await this.serializeCloudInputs(inputs, dataUrlLimit);
         // Request
         const url = this.getPredictUrl(tag, { stream: true, rawOutputs: true, dataUrlLimit });
         const response = await fetch(url, {
@@ -178,13 +202,19 @@ export class PredictionService {
             if (done)
                 break;
             // Check error
-            const payload = JSON.parse(value);
+            const prediction = JSON.parse(value);
             if (response.status >= 400)
-                throw new Error(payload.errors?.[0].message ?? "An unknown error occurred");
-            // Deserialize
-            payload.results = await parseResults(payload.results, rawOutputs);
+                throw new Error(prediction.errors?.[0].message ?? "An unknown error occurred");
+            // Parse
+            prediction.results = await this.parseResults(prediction.results, rawOutputs);
+            // Check edge prediction
+            if (prediction.type !== PredictorType.Edge || rawOutputs)
+                return prediction;
+             // Load edge predictor
+            const predictor = await this.load(prediction);
+            this.cache.set(tag, predictor);
             // Yield
-            yield payload;
+            yield !!inputs ? this.predict(tag, predictor, inputs) : prediction;
         }
     }
     
@@ -204,6 +234,121 @@ export class PredictionService {
         // Release predictor
         const status = this.fxnc._FXNPredictorRelease(predictor);
         return status === 0;
+    }
+
+    /**
+     * Convert an object into a Function value.
+     * @param input Input arguments.
+     * @returns Function value.
+     */
+    public async toValue (input: ToValueInput): Promise<Value> {
+        const { value, name, minUploadSize: dataUrlLimit = 4096, key } = input;
+        // Null
+        if (value === null)
+            return { data: null, type: "null" };
+        // Value
+        if (isFunctionValue(value))
+            return value;
+        // Tensor
+        if (isTensor(value)) {
+            const data = await this.storage.upload({ name, buffer: value.data.buffer, type: UploadType.Value, dataUrlLimit, key });
+            const dtype = getTypedArrayDtype(value.data);
+            const type = dtypeToString(dtype);
+            return { data, type, shape: value.shape };
+        }
+        // Typed array
+        if (isTypedArray(value))
+            return await this.toValue({ ...input, value: { data: value, shape: [value.length] } });
+        // Binary
+        if (value instanceof ArrayBuffer) {
+            const data = await this.storage.upload({ name, buffer: value, type: UploadType.Value, dataUrlLimit, key });
+            return { data, type: "binary" };
+        }
+        // String
+        if (typeof(value) === "string") {
+            const buffer = new TextEncoder().encode(value).buffer;
+            const data = await this.storage.upload({ name, buffer, type: UploadType.Value, dataUrlLimit, key });
+            return { data, type: "string" };
+        }
+        // Number
+        if (typeof(value) === "number") {
+            const isInt = Number.isInteger(value);
+            const buffer = isInt ? new Int32Array([ value as number ]).buffer : new Float32Array([ value as number ]).buffer;
+            const data = await this.storage.upload({ name, buffer, type: UploadType.Value, dataUrlLimit, key });
+            const type = isInt ? "int32" : "float32";
+            return { data, type, shape: [] };
+        }
+        // Boolean
+        if (typeof(value) === "boolean") {
+            const buffer = new Uint8Array([ +value ]).buffer;
+            const data = await this.storage.upload({ name, buffer, type: UploadType.Value, dataUrlLimit, key });
+            return { data, type: "bool", shape: [] };
+        }
+        // Boolean array // We want benefits of `TypedArray` given that there's no `BoolArray`
+        if (
+            Array.isArray(value) &&
+            value.length > 0 &&
+            typeof(value[0]) === "boolean" &&
+            !value.some(e => typeof(e) !== "boolean") // fail faster for non-boolean arrays
+        ) {
+            const buffer = new Uint8Array(value as number[]).buffer;
+            const data = await this.storage.upload({ name, buffer, type: UploadType.Value, dataUrlLimit, key });
+            return { data, type: "bool", shape: [value.length] };
+        }
+        // List
+        if (Array.isArray(value)) {
+            const serializedValue = JSON.stringify(value);
+            const buffer = new TextEncoder().encode(serializedValue).buffer;
+            const data = await this.storage.upload({ name, buffer, type: UploadType.Value, dataUrlLimit, key });
+            return { data, type: "list" };
+        }
+        // Dict
+        if (typeof(value) === "object") {
+            const serializedValue = JSON.stringify(value);
+            const buffer = new TextEncoder().encode(serializedValue).buffer;
+            const data = await this.storage.upload({ name, buffer, type: UploadType.Value, dataUrlLimit, key });
+            return { data, type: "dict" };
+        }
+        // Throw
+        throw new Error(`Value ${value} of type ${typeof(value)} cannot be converted to a Function value`);
+    }
+
+    /**
+     * Convert a Function value to a plain object.
+     * If the Function value cannot be converted to a plain object, the Function value is returned as-is.
+     * @param input Input arguments.
+     * @returns Plain object.
+     */
+    public async toObject (input: ToObjectInput): Promise<PlainValue | Value> {
+        const { value: { data, type, shape } } = input;
+        // Null
+        if (type === "null")
+            return null;
+        // Download
+        const buffer = await getValueData(data);
+        // Tensor
+        const ARRAY_TYPES: Dtype[] = [
+            "float16", "float32", "float64",
+            "int8", "int16", "int32", "int64",
+            "uint8", "uint16", "uint32", "uint64"
+        ];
+        if (ARRAY_TYPES.includes(type))
+            return toTypedArrayOrNumber(buffer, type, shape);
+        // Boolean
+        if (type === "bool")
+            return toBooleanArrayOrBoolean(buffer, shape);
+        // String
+        if (type === "string")
+            return new TextDecoder().decode(buffer);
+        // JSON
+        const JSON_TYPES: Dtype[] = ["list", "dict"];
+        if (JSON_TYPES.includes(type))
+            return JSON.parse(new TextDecoder().decode(buffer));
+        // Binary
+        if (type === "binary")
+            return buffer;
+        // Return Function value
+        return input.value;
     }
 
     private async loadFxnc (): Promise<any> { // INCOMPLETE // Mount IDBFS for caching
@@ -441,7 +586,7 @@ export class PredictionService {
             // Tensor
             if (isTensor(value)) {
                 const { data, shape } = value;
-                const dtype = dtypeFromTypedArray(data);
+                const dtype = getTypedArrayDtype(data);
                 const elementCount = shape.reduce((a, b) => a * b, 1);
                 const pBuffer = fxnc._malloc(data.byteLength);
                 const pShape = fxnc._malloc(elementCount * Int32Array.BYTES_PER_ELEMENT);
@@ -555,25 +700,25 @@ export class PredictionService {
         const elementCount = shape.reduce((a, b) => a * b, 1);
         try {
             switch(type) {
-                case Dtype.Null:    return null;
-                case Dtype.Float16: throw new Error(`Cannot convert prediction output of type 'float16' to value because it is not supported`);
-                case Dtype.Float32: return toTensorOrNumber(new Float32Array(fxnc.HEAPF32.buffer, pData, elementCount), shape);
-                case Dtype.Float64: return toTensorOrNumber(new Float64Array(fxnc.HEAPF64.buffer, pData, elementCount), shape);
-                case Dtype.Int8:    return toTensorOrNumber(new Int8Array(fxnc.HEAP8.buffer, pData, elementCount), shape);
-                case Dtype.Int16:   return toTensorOrNumber(new Int16Array(fxnc.HEAP16.buffer, pData, elementCount), shape);
-                case Dtype.Int32:   return toTensorOrNumber(new Int32Array(fxnc.HEAP32.buffer, pData, elementCount), shape);
-                case Dtype.Int64:   return toTensorOrNumber(new BigInt64Array(fxnc.HEAP8.buffer, pData, elementCount), shape);
-                case Dtype.Uint8:   return toTensorOrNumber(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount), shape);
-                case Dtype.Uint16:  return toTensorOrNumber(new Uint16Array(fxnc.HEAPU16.buffer, pData, elementCount), shape);
-                case Dtype.Uint32:  return toTensorOrNumber(new Uint32Array(fxnc.HEAPU32.buffer, pData, elementCount), shape);
-                case Dtype.Uint64:  return toTensorOrNumber(new BigUint64Array(fxnc.HEAP8.buffer, pData, elementCount), shape);
-                case Dtype.Bool:    return toTensorOrBoolean(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount), shape);
-                case Dtype.String:  return fxnc.UTF8ToString(pData);
-                case Dtype.List:    return JSON.parse(fxnc.UTF8ToString(pData));
-                case Dtype.Dict:    return JSON.parse(fxnc.UTF8ToString(pData));
-                case Dtype.Image:   return toImage(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount), shape);
-                case Dtype.Binary:  return toArrayBuffer(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount));
-                default:            throw new Error(`Cannot convert prediction output to value because of unknown type: ${type}`);
+                case FXNDtype.Null:     return null;
+                case FXNDtype.Float16:  throw new Error(`Cannot convert prediction output of type 'float16' to value because it is not supported`);
+                case FXNDtype.Float32:  return toTensorOrNumber(new Float32Array(fxnc.HEAPF32.buffer, pData, elementCount), shape);
+                case FXNDtype.Float64:  return toTensorOrNumber(new Float64Array(fxnc.HEAPF64.buffer, pData, elementCount), shape);
+                case FXNDtype.Int8:     return toTensorOrNumber(new Int8Array(fxnc.HEAP8.buffer, pData, elementCount), shape);
+                case FXNDtype.Int16:    return toTensorOrNumber(new Int16Array(fxnc.HEAP16.buffer, pData, elementCount), shape);
+                case FXNDtype.Int32:    return toTensorOrNumber(new Int32Array(fxnc.HEAP32.buffer, pData, elementCount), shape);
+                case FXNDtype.Int64:    return toTensorOrNumber(new BigInt64Array(fxnc.HEAP8.buffer, pData, elementCount), shape);
+                case FXNDtype.Uint8:    return toTensorOrNumber(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount), shape);
+                case FXNDtype.Uint16:   return toTensorOrNumber(new Uint16Array(fxnc.HEAPU16.buffer, pData, elementCount), shape);
+                case FXNDtype.Uint32:   return toTensorOrNumber(new Uint32Array(fxnc.HEAPU32.buffer, pData, elementCount), shape);
+                case FXNDtype.Uint64:   return toTensorOrNumber(new BigUint64Array(fxnc.HEAP8.buffer, pData, elementCount), shape);
+                case FXNDtype.Bool:     return toTensorOrBoolean(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount), shape);
+                case FXNDtype.String:   return fxnc.UTF8ToString(pData);
+                case FXNDtype.List:     return JSON.parse(fxnc.UTF8ToString(pData));
+                case FXNDtype.Dict:     return JSON.parse(fxnc.UTF8ToString(pData));
+                case FXNDtype.Image:    return toImage(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount), shape);
+                case FXNDtype.Binary:   return toArrayBuffer(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount));
+                default:                throw new Error(`Cannot convert prediction output to value because of unknown type: ${type}`);
             }
         } finally {
             fxnc._free(ppData);
@@ -590,31 +735,40 @@ export class PredictionService {
             .join("&");
         return `${this.client.url}/predict/${tag}?${qs}`;
     }
+
+    private async serializeCloudInputs (
+        inputs: Record<string, PlainValue | Value>,
+        minUploadSize: number = 4096
+    ): Promise<Record<string, Value>> {
+        // Check
+        if (!inputs)
+            return null;
+        // Serialize
+        const key = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2); // this doesn't have to be robust
+        const entries = await Promise.all(Object.entries(inputs)
+            .map(([name, value]) => this.toValue({ value, name, minUploadSize, key })
+            .then(f => ({ ...f, name })))
+        );
+        const result = Object.fromEntries(entries.map(({ name, ...value }) => [name, value as Value]));
+        // Return
+        return result;
+    }
+
+    private async parseResults (rawResults: Value[], rawOutputs: boolean): Promise<(Value | PlainValue)[]> {
+        return rawResults && !rawOutputs ? 
+            await Promise.all(rawResults.map(value => this.toObject({ value }))) :
+            rawResults;
+    }
 }
 
-async function serializeCloudInputs (
-    inputs: Record<string, PlainValue | Value>,
-    storage: StorageService,
-    minUploadSize: number = 4096
-): Promise<Record<string, Value>> {
-    // Check
-    if (!inputs)
-        return null;
-    // Serialize
-    const key = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2); // this doesn't have to be robust
-    const entries = await Promise.all(Object.entries(inputs)
-        .map(([name, value]) => toFunctionValue({ storage, value, name, minUploadSize, key })
-        .then(f => ({ ...f, name })))
-    );
-    const result = Object.fromEntries(entries.map(({ name, ...value }) => [name, value as Value]));
-    // Return
-    return result;
-}
-
-async function parseResults (rawResults: Value[], rawOutputs: boolean): Promise<(Value | PlainValue)[]> {
-    return rawResults && !rawOutputs ? 
-        await Promise.all(rawResults.map(value => toPlainValue({ value: value as Value }))) :
-        rawResults;
+async function getValueData (url: string): Promise<ArrayBuffer> {
+    // Data URL
+    if (url.startsWith("data:"))
+        return (parseDataURL(url).body as Uint8Array).buffer
+    // Download
+    const response = await fetch(url);
+    const buffer = await response.arrayBuffer();
+    return buffer;
 }
 
 function getResourceName (url: string): string {
@@ -628,13 +782,40 @@ function cloneTypedArray<T extends TypedArray> (input: T): T {
     return buffer;
 }
 
-function toTensorOrNumber (data: TypedArray, shape: number[]): number | bigint | Tensor {
+function toTensorOrNumber (data: TypedArray, shape: number[]): number | bigint | Tensor { // INCOMPLETE // MERGE DOWN
     return shape.length > 0 ? { data: cloneTypedArray(data), shape } : data[0];
 }
 
 function toTensorOrBoolean (data: Uint8Array, shape: number[]): boolean | Tensor {
     const res = toTensorOrNumber(data, shape);
     return typeof res === "number" ? !!res : res as Tensor;
+}
+
+function toTypedArrayOrNumber (
+    buffer: ArrayBuffer,
+    type: Dtype,
+    shape: number[]
+): number | bigint | TypedArray | Tensor { // INCOMPLETE // MERGE UP
+    const CTOR_MAP = {
+        "float32": Float32Array,
+        "float64": Float64Array,
+        "int8":    Int8Array,
+        "int16":   Int16Array,
+        "int32":   Int32Array,
+        "int64":   BigInt64Array,
+        "uint8":   Uint8Array,
+        "uint16":  Uint16Array,
+        "uint32":  Uint32Array,
+        "uint64":  BigUint64Array,
+    } as any;
+    const data = new CTOR_MAP[type](buffer);
+    return shape.length > 0 ? shape.length > 1 ? { data, shape } : data : data[0];
+}
+
+function toBooleanArrayOrBoolean (buffer: ArrayBuffer, shape: number[]): boolean | boolean[] {
+    const tensor = new Uint8Array(buffer);
+    const array = Array.from(tensor as Uint8Array).map(num => num !== 0);
+    return shape.length > 0 ? array : array[0];
 }
 
 function toImage (data: Uint8Array, shape: number[]): Image {
@@ -645,39 +826,23 @@ function toArrayBuffer (data: Uint8Array): ArrayBuffer {
     return cloneTypedArray(data).buffer;
 }
 
-function dtypeFromTypedArray (data: TypedArray | ArrayBuffer): Dtype {
-    if (data instanceof BoolArray)          return Dtype.Bool;
-    if (data instanceof Float32Array)       return Dtype.Float32;
-    if (data instanceof Float64Array)       return Dtype.Float64;
-    if (data instanceof Int8Array)          return Dtype.Int8;
-    if (data instanceof Int16Array)         return Dtype.Int16;
-    if (data instanceof Int32Array)         return Dtype.Int32;
-    if (data instanceof BigInt64Array)      return Dtype.Int64;
-    if (data instanceof Uint8Array)         return Dtype.Uint8;
-    if (data instanceof Uint8ClampedArray)  return Dtype.Uint8;
-    if (data instanceof Uint16Array)        return Dtype.Uint16;
-    if (data instanceof Uint32Array)        return Dtype.Uint32;
-    if (data instanceof BigUint64Array)     return Dtype.Uint64;
-    throw new Error("Unsupported TypedArray or ArrayBuffer type");
+function getTypedArrayDtype (data: TypedArray | ArrayBuffer): FXNDtype {
+    if (data instanceof BoolArray)          return FXNDtype.Bool;
+    if (data instanceof Float32Array)       return FXNDtype.Float32;
+    if (data instanceof Float64Array)       return FXNDtype.Float64;
+    if (data instanceof Int8Array)          return FXNDtype.Int8;
+    if (data instanceof Int16Array)         return FXNDtype.Int16;
+    if (data instanceof Int32Array)         return FXNDtype.Int32;
+    if (data instanceof BigInt64Array)      return FXNDtype.Int64;
+    if (data instanceof Uint8Array)         return FXNDtype.Uint8;
+    if (data instanceof Uint8ClampedArray)  return FXNDtype.Uint8;
+    if (data instanceof Uint16Array)        return FXNDtype.Uint16;
+    if (data instanceof Uint32Array)        return FXNDtype.Uint32;
+    if (data instanceof BigUint64Array)     return FXNDtype.Uint64;
+    return FXNDtype.Binary;
 }
 
-function assert (condition: any, message: string) {
-    if (!condition)
-        throw new Error(`Function Error: ${message ?? "An unknown error occurred"}`);
-}
-
-function cassert (condition: number, message: string) {
-    assert(condition === 0, message);        
-}
-
-const CLIENT = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ?
-    "edge" : // e.g. Vercel Serverless Functions with edge runtime
-    "webworker" :
-    "node" :
-    "deno" :
-    "browser";
-
-const enum Dtype {
+const enum FXNDtype {
     Null = 0,
     Float16 = 1,
     Float32 = 2,
@@ -697,5 +862,39 @@ const enum Dtype {
     Image = 16,
     Binary = 17
 }
+
+function dtypeToString (type: FXNDtype): Dtype {
+    switch (type) {
+        case FXNDtype.Bool:     return "bool";
+        case FXNDtype.Float32:  return "float32";
+        case FXNDtype.Float64:  return "float64";
+        case FXNDtype.Int8:     return "int8";
+        case FXNDtype.Int16:    return "int16";
+        case FXNDtype.Int32:    return "int32";
+        case FXNDtype.Int64:    return "int64";
+        case FXNDtype.Uint8:    return "uint8";
+        case FXNDtype.Uint16:   return "uint16";
+        case FXNDtype.Uint32:   return "uint32";
+        case FXNDtype.Uint64:   return "uint64";
+        case FXNDtype.Binary:   return "binary";
+        default:                throw new Error(`Cannot convert data type ${type} to string`);
+    }
+}
+
+function assert (condition: any, message: string) {
+    if (!condition)
+        throw new Error(`Function Error: ${message ?? "An unknown error occurred"}`);
+}
+
+function cassert (condition: number, message: string) {
+    assert(condition === 0, message);        
+}
+
+const CLIENT = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ?
+    "edge" : // e.g. Vercel Serverless Functions with edge runtime
+    "webworker" :
+    "node" :
+    "deno" :
+    "browser";
 
 class BoolArray extends Uint8Array { }

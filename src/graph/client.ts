@@ -16,32 +16,47 @@ export interface GraphPayload<T> {
     headers: Headers;
 }
 
+export interface QueryInput {
+    /**
+     * GraphQL query.
+     */
+    query: string;
+    /**
+     * Query variables.
+     */
+    variables?: { [key: string]: any };
+    /**
+     * Graph API URL override.
+     */
+    url?: string;
+}
+
 /**
  * Function graph API client.
  */
 export class GraphClient {
 
     public readonly url: string;
-    public readonly auth: string
+    public readonly auth: string;
+    public static readonly URL: string = "https://api.fxn.ai";
 
     /**
      * Create a Function graph API client.
      * @param config Function client configuration.
      */
     public constructor (config: FunctionConfig) {
-        const { accessKey, url = "https://api.fxn.ai" } =  config;
+        const { accessKey, url = GraphClient.URL } =  config;
         this.url = url;
         this.auth = accessKey ? `Bearer ${accessKey}` : null;
     }
 
     /**
      * Query the Function graph API.
-     * @param query Graph query.
-     * @param variables Query variables.
      */
-    public async query<T = any> (query: string, variables?: { [key: string]: any }): Promise<GraphPayload<T>> {
+    public async query<T = any> ({ query, variables, url: urlOverride }: QueryInput): Promise<GraphPayload<T>> {
         // Request
-        const response = await fetch(`${this.url}/graph`, {
+        const url = urlOverride ?? `${this.url}/graph`;
+        const response = await fetch(url, {
             method: "POST",
             headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: this.auth },
             body: JSON.stringify({ query, variables })

@@ -1,5 +1,7 @@
 ## 0.0.28
-*INCOMPLETE*
++ Fixed prediction proxying errors when large prediction input values are uploaded.
++ Refactored `toFunctionValue` function to `fxn.predictions.toValue` method.
++ Refactored `toPlainValue` function to `fxn.predictions.toObject` method.
 
 ## 0.0.27
 + Minor updates.
