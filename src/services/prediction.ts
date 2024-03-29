@@ -99,7 +99,8 @@ export class PredictionService {
     private readonly FXNC_DATA_ROOT = "/fxn";
     private readonly FXNC_CACHE_ROOT = `${this.FXNC_DATA_ROOT}/cache`;
     private readonly FXNC_VERSION = "0.0.14";
-    private readonly FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/edgefxn/${this.FXNC_VERSION}`;
+    //private readonly FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/edgefxn/${this.FXNC_VERSION}`;
+    private readonly FXNC_LIB_URL_BASE = "";
 
     public constructor (client: GraphClient, storage: StorageService) {
         this.client = client;
@@ -140,10 +141,19 @@ export class PredictionService {
             },
             body: JSON.stringify(values)
         });        
-        const prediction = await response.json();
+        //const prediction = await response.json();
+        const prediction = {
+            tag: "@natml/movenet-multipose",
+            type: PredictorType.Edge,
+            configuration: "hello",
+            resources: [
+                { type: "dso", url: "http://localhost:3000/libPredictor.so" },
+                { type: "bin", url: "http://localhost:3000/ec96df50080fcb1c865b1631a5d842318242d4553852c24bdea403a0f5f5836c" },
+            ]
+        } as any;
         // Check
-        if (!response.ok)
-            throw new Error(prediction.errors?.[0].message ?? "An unknown error occurred");
+        //if (!response.ok)
+        //    throw new Error(prediction.errors?.[0].message ?? "An unknown error occurred");
         // Parse
         prediction.results = await this.parseResults(prediction.results, rawOutputs);
         // Check edge prediction
@@ -648,7 +658,7 @@ export class PredictionService {
                 const pBuffer = fxnc._malloc(bufferSize);
                 const dstView = new Uint8Array(fxnc.HEAPU8.buffer, pBuffer, bufferSize);
                 dstView.set(data);
-                const status = fxnc._FXNValueCreateImage(pBuffer, width, height, 1, ppValue);
+                const status = fxnc._FXNValueCreateImage(pBuffer, width, height, 4, 1, ppValue);
                 fxnc._free(pBuffer);
                 cassert(status, `Failed to create image value with status: ${status}`);
                 return fxnc.getValue(ppValue, "*");

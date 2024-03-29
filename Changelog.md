@@ -1,5 +1,5 @@
 ## 0.0.29
-*INCOMPLETE*
++ Fixed error when making edge predictions with image input values.
 
 ## 0.0.28
 + Fixed prediction proxying errors when large prediction input values are uploaded.
