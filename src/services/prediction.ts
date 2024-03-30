@@ -55,7 +55,7 @@ export interface CreatePredictionInput {
     client?: string;
     /**
      * Configuration identifier.
-     * Specify this to override the current client configuration token.
+     * Specify this to override the current client configuration identifier.
      */
     configuration?: string;
 }
@@ -141,19 +141,10 @@ export class PredictionService {
             },
             body: JSON.stringify(values)
         });        
-        //const prediction = await response.json();
-        const prediction = {
-            tag: "@natml/movenet-multipose",
-            type: PredictorType.Edge,
-            configuration: "hello",
-            resources: [
-                { type: "dso", url: "http://localhost:3000/libPredictor.so" },
-                { type: "bin", url: "http://localhost:3000/ec96df50080fcb1c865b1631a5d842318242d4553852c24bdea403a0f5f5836c" },
-            ]
-        } as any;
+        const prediction = await response.json();
         // Check
-        //if (!response.ok)
-        //    throw new Error(prediction.errors?.[0].message ?? "An unknown error occurred");
+        if (!response.ok)
+            throw new Error(prediction.errors?.[0].message ?? "An unknown error occurred");
         // Parse
         prediction.results = await this.parseResults(prediction.results, rawOutputs);
         // Check edge prediction
