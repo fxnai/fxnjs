@@ -1,3 +1,6 @@
+## 0.0.30
+*INCOMPLETE*
+
 ## 0.0.29
 + Fixed error when making edge predictions with image input values.
 
