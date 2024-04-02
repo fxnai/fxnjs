@@ -98,9 +98,8 @@ export class PredictionService {
     private fxnc: any;
     private readonly FXNC_DATA_ROOT = "/fxn";
     private readonly FXNC_CACHE_ROOT = `${this.FXNC_DATA_ROOT}/cache`;
-    private readonly FXNC_VERSION = "0.0.14";
-    //private readonly FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/edgefxn/${this.FXNC_VERSION}`;
-    private readonly FXNC_LIB_URL_BASE = "";
+    private readonly FXNC_VERSION = "0.0.15";
+    private readonly FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/edgefxn/${this.FXNC_VERSION}`;
 
     public constructor (client: GraphClient, storage: StorageService) {
         this.client = client;
