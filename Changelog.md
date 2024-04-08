@@ -1,5 +1,5 @@
 ## 0.0.30
-*INCOMPLETE*
++ Fixed `fxn.predictors.retrieve` not populating signature output parameter `schema`.
 
 ## 0.0.29
 + Fixed error when making edge predictions with image input values.

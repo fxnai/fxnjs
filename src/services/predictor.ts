@@ -261,6 +261,18 @@ signature {
         name
         type
         description
+        range
+        optional
+        enumeration {
+            name
+            value
+        }
+        defaultValue {
+            data
+            type
+            shape
+        }
+        schema
     }
 }
 error
