@@ -327,7 +327,7 @@ export class PredictionService {
      * @param input Input arguments.
      * @returns Plain object.
      */
-    public async toObject (input: ToObjectInput): Promise<PlainValue | Value> {
+    public async toObject (input: ToObjectInput): Promise<PlainValue | Value> { // INCOMPLETE // Deserialize image features to `ImageData`
         const { value: { data, type, shape } } = input;
         // Null
         if (type === "null")
