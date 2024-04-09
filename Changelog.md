@@ -1,3 +1,6 @@
+## 0.0.31
+*INCOMPLETE*
+
 ## 0.0.30
 + Added support for making edge predictions on `ImageData` input values.
 + Fixed `fxn.predictors.retrieve` not populating signature output parameter `schema`.
