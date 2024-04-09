@@ -3,9 +3,9 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import mocha from "@testdeck/mocha"
 import { expect, should, use } from "chai"
 import chaiAsPromised from "chai-as-promised"
+import mocha from "@testdeck/mocha"
 import { Prediction, Function } from "../src"
 
 @mocha.suite("Predictions")
@@ -19,7 +19,7 @@ class PredictionTest {
         this.fxn = new Function({ accessKey: process.env.ACCESS_KEY, url: process.env.API_URL });
     }
 
-    @mocha.test.skip
+    @mocha.test
     async "Should create a cloud prediction" () {
         const tag = "@yusuf/identity";
         const inputs = {
@@ -43,7 +43,7 @@ class PredictionTest {
         expect(results?.[1]).to.equal(24);
     }
 
-    @mocha.test.skip
+    @mocha.test
     async "Should stream a cloud prediction" () {
         const sentence = "Hello world";
         const stream = await this.fxn.predictions.stream({
@@ -56,7 +56,7 @@ class PredictionTest {
         expect(predictions.length).greaterThan(1);
     }
 
-    @mocha.test
+    @mocha.test.skip
     async "Should create an edge prediction" () {
         const prediction = await this.fxn.predictions.create({
             tag: "@fxn/math",

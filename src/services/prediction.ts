@@ -256,6 +256,14 @@ export class PredictionService {
             const type = dtypeToString(dtype);
             return { data, type, shape: value.shape };
         }
+        // Image
+        if (isImage(value)) {
+            const canvas = createCanvas(value.width, value.height);
+            const ctx = canvas.getContext("2d");
+            ctx.putImageData(value as ImageData, 0, 0);
+            const data = canvas.toDataURL();
+            return { data, type: "image" };
+        }
         // Typed array
         if (isTypedArray(value))
             return await this.toValue({ ...input, value: { data: value, shape: [value.length] } });
@@ -898,3 +906,18 @@ const CLIENT = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ?
     "browser";
 
 class BoolArray extends Uint8Array { }
+
+let _canvas: any = null;
+
+function createCanvas (width: number, height: number): HTMLCanvasElement {
+    // Browser
+    if (typeof window !== "undefined") {
+        const c = document.createElement("canvas");
+        c.width = width;
+        c.height = height;
+        return c;
+    }
+    // Node
+    _canvas ??= eval("require")("canvas");
+    return _canvas.createCanvas(width, height);
+}

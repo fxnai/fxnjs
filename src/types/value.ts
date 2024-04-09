@@ -23,8 +23,10 @@ export type TypedArray =
 
 /**
  * Image.
+ * This is strucurally equal to `ImageData`.
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/ImageData
  */
-export interface Image { // structurally equal to `ImageData` // https://developer.mozilla.org/en-US/docs/Web/API/ImageData
+export interface Image {
     /**
      * Pixel buffer.
      * This MUST have an `RGBA8888` layout.

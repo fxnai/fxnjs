@@ -3,11 +3,11 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import mocha from "@testdeck/mocha"
+import { decode } from "base64-arraybuffer"
 import { expect, should, use } from "chai"
 import chaiAsPromised from "chai-as-promised"
-import { decode } from "base64-arraybuffer"
 import { readFileSync } from "fs"
+import mocha from "@testdeck/mocha"
 import { Function, UploadType } from "../src"
 
 @mocha.suite("Storage")
