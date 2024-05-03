@@ -98,7 +98,7 @@ export class PredictionService {
     private fxnc: any;
     private readonly FXNC_DATA_ROOT = "/fxn";
     private readonly FXNC_CACHE_ROOT = `${this.FXNC_DATA_ROOT}/cache`;
-    private readonly FXNC_VERSION = "0.0.15";
+    private readonly FXNC_VERSION = "0.0.18";
     private readonly FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/edgefxn/${this.FXNC_VERSION}`;
 
     public constructor (client: GraphClient, storage: StorageService) {
@@ -501,7 +501,7 @@ export class PredictionService {
             // Marshal inputs
             pInputs = fxnc.getValue(ppInputs, "*");
             for (const [key, value] of Object.entries(inputs)) {
-                const pValue = this.plainToEdgeValue(value);
+                const pValue = this.toEdgeValue(value);
                 const pKey = fxnc._malloc(key.length + 1);
                 fxnc.stringToUTF8(key, pKey, key.length + 1);
                 status = fxnc._FXNValueMapSetValue(pInputs, pKey, pValue);
@@ -509,7 +509,7 @@ export class PredictionService {
                 fxnc._free(pKey);
             }
             // Make prediction
-            status = fxnc._FXNPredictorPredict(predictor, pInputs, ppPrediction);
+            status = fxnc._FXNPredictorCreatePrediction(predictor, pInputs, ppPrediction);
             cassert(status, `Failed to create ${tag} prediction with status: ${status}`);
             pPrediction = fxnc.getValue(ppPrediction, "*");
             // Get ID
@@ -578,7 +578,7 @@ export class PredictionService {
         }
     }
 
-    private plainToEdgeValue (value: PlainValue | Value): number {
+    private toEdgeValue (value: PlainValue | Value): number { // INCOMPLETE // Remove canvas dependency once we have `fxnc` on NodeJS
         const fxnc = this.fxnc;
         const ppValue = fxnc._malloc(4);
         try {
@@ -613,7 +613,7 @@ export class PredictionService {
             if (ArrayBuffer.isView(value)) {
                 const byteSize = (value.constructor as any).BYTES_PER_ELEMENT;
                 const elements = value.byteLength / byteSize;
-                return this.plainToEdgeValue({ data: value, shape: [elements] });
+                return this.toEdgeValue({ data: value, shape: [elements] });
             }
             // Binary
             if (value instanceof ArrayBuffer) {
@@ -639,16 +639,16 @@ export class PredictionService {
             // Number
             if (typeof(value) === "number") {
                 const data = Number.isInteger(value) ? new Int32Array([value]) : new Float32Array([value]);
-                return this.plainToEdgeValue({ data, shape: [] });
+                return this.toEdgeValue({ data, shape: [] });
             }
             // Bigint
             if (typeof(value) === "bigint") {
                 const data = new BigInt64Array([value]);
-                return this.plainToEdgeValue({ data, shape: [] });
+                return this.toEdgeValue({ data, shape: [] });
             }
             // Boolean
             if (typeof(value) === "boolean")
-                return this.plainToEdgeValue({ data: new BoolArray([+value]), shape: [] });
+                return this.toEdgeValue({ data: new BoolArray([+value]), shape: [] });
             // Image
             if (isImage(value)) {
                 const { data, width, height } = value;

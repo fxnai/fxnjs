@@ -1,5 +1,5 @@
 ## 0.0.31
-*INCOMPLETE*
++ Updated to Function C 0.0.18.
 
 ## 0.0.30
 + Added support for making edge predictions on `ImageData` input values.
