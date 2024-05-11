@@ -146,14 +146,12 @@ export class PredictionService {
             throw new Error(prediction.errors?.[0].message ?? "An unknown error occurred");
         // Parse
         prediction.results = await this.parseResults(prediction.results, rawOutputs);
-        // Check edge prediction
-        if (prediction.type !== PredictorType.Edge || rawOutputs)
+        if (prediction.type === PredictorType.Edge && !rawOutputs) {
+            const predictor = await this.load(prediction);
+            this.cache.set(tag, predictor);
+            return !!inputs ? this.predict(tag, predictor, inputs) : prediction;
+        } else
             return prediction;
-        // Load edge predictor
-        const predictor = await this.load(prediction);
-        this.cache.set(tag, predictor);
-        // Create edge prediction
-        return !!inputs ? this.predict(tag, predictor, inputs) : prediction;
     }
 
     /**
@@ -207,14 +205,12 @@ export class PredictionService {
                 throw new Error(prediction.errors?.[0].message ?? "An unknown error occurred");
             // Parse
             prediction.results = await this.parseResults(prediction.results, rawOutputs);
-            // Check edge prediction
-            if (prediction.type !== PredictorType.Edge || rawOutputs)
-                return prediction;
-             // Load edge predictor
-            const predictor = await this.load(prediction);
-            this.cache.set(tag, predictor);
-            // Yield
-            yield !!inputs ? this.predict(tag, predictor, inputs) : prediction;
+            if (prediction.type === PredictorType.Edge && !rawOutputs) {
+                const predictor = await this.load(prediction);
+                this.cache.set(tag, predictor);
+                yield !!inputs ? this.predict(tag, predictor, inputs) : prediction;
+            } else
+                yield prediction;
         }
     }
     

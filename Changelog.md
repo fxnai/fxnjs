@@ -1,3 +1,6 @@
+## 0.0.32
++ Fixed `isFunctionValue` type guard function returning `false` for `null` Function values.
+
 ## 0.0.31
 + Updated to Function C 0.0.18.
 

@@ -81,7 +81,7 @@ export interface Value {
      * Value data URL.
      * This could either be a remote or data URL.
      */
-    data: string;
+    data?: string;
     /**
      * Value data type.
      */

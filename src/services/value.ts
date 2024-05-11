@@ -11,9 +11,21 @@ import { Image, Tensor, TypedArray, Value } from "../types"
  * @returns Whether the input value is a Function value.
  */
 export function isFunctionValue (value: any): value is Value {
-    return value != null &&
-        !!value.type &&
-        value.data !== undefined;
+    // Check null
+    if (value == null)
+        return false;
+    // Check keys
+    const VALUE_KEYS = ["data", "type", "shape"]
+    if (!Object.keys(value).every(key => VALUE_KEYS.includes(key)))
+        return false;
+    // Check that the type is populated
+    if (!value.type)
+        return false;
+    // Check null
+    if (!value.data && value.type !== "null")
+        return false;
+    // Pass
+    return true;
 }
 
 /**

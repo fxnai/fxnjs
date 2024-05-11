@@ -7,7 +7,7 @@ import { createCanvas, loadImage } from "canvas"
 import { expect, should, use } from "chai"
 import chaiAsPromised from "chai-as-promised"
 import mocha from "@testdeck/mocha"
-import { Function, Tensor } from "../src"
+import { Function, Tensor, isFunctionValue } from "../src"
 
 @mocha.suite("Values")
 class ValueTest {
@@ -104,6 +104,13 @@ class ValueTest {
         const output = await this.fxn.predictions.toObject({ value }) as ImageData;
         expect(output.width).to.eql(imageData.width);
         expect(output.height).to.eql(imageData.height);
+    }
+
+    @mocha.test
+    async "Should consider null value to be Function value" () {
+        const value = { type: "null" as const };
+        expect(isFunctionValue(value)).to.be.true;
+        expect(this.fxn.predictions.toObject({ value }) === null);
     }
 }
 
