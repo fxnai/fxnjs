@@ -94,17 +94,17 @@ export class PredictionService {
 
     private readonly client: GraphClient;
     private readonly storage: StorageService;
-    private readonly cache: Map<string, number>;
+    private readonly cache: Map<string, Promise<number>>;
     private fxnc: any;
     private readonly FXNC_DATA_ROOT = "/fxn";
     private readonly FXNC_CACHE_ROOT = `${this.FXNC_DATA_ROOT}/cache`;
-    private readonly FXNC_VERSION = "0.0.18";
+    private readonly FXNC_VERSION = "0.0.19";
     private readonly FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/edgefxn/${this.FXNC_VERSION}`;
 
     public constructor (client: GraphClient, storage: StorageService) {
         this.client = client;
         this.storage = storage;
-        this.cache = new Map<string, number>();
+        this.cache = new Map<string, Promise<number>>();
     }
 
     /**
@@ -125,7 +125,7 @@ export class PredictionService {
             configuration = this.getConfigurationId()
         } = input;
         if (this.cache.has(tag) && !rawOutputs)
-            return this.predict(tag, this.cache.get(tag), inputs);
+            return this.predict(tag, await this.cache.get(tag), inputs);
         // Serialize inputs
         const values = await this.serializeCloudInputs(inputs, dataUrlLimit);        
         // Query
@@ -147,9 +147,8 @@ export class PredictionService {
         // Parse
         prediction.results = await this.parseResults(prediction.results, rawOutputs);
         if (prediction.type === PredictorType.Edge && !rawOutputs) {
-            const predictor = await this.load(prediction);
-            this.cache.set(tag, predictor);
-            return !!inputs ? this.predict(tag, predictor, inputs) : prediction;
+            this.cache.set(tag, this.load(prediction));
+            return !!inputs ? this.predict(tag, await this.cache.get(tag), inputs) : prediction;
         } else
             return prediction;
     }
@@ -173,7 +172,7 @@ export class PredictionService {
             configuration = this.getConfigurationId()
         } = input;
         if (this.cache.has(tag) && !rawOutputs) {
-            yield this.predict(tag, this.cache.get(tag), inputs);
+            yield this.predict(tag, await this.cache.get(tag), inputs);
             return;
         }
         // Serialize inputs
@@ -206,9 +205,8 @@ export class PredictionService {
             // Parse
             prediction.results = await this.parseResults(prediction.results, rawOutputs);
             if (prediction.type === PredictorType.Edge && !rawOutputs) {
-                const predictor = await this.load(prediction);
-                this.cache.set(tag, predictor);
-                yield !!inputs ? this.predict(tag, predictor, inputs) : prediction;
+                this.cache.set(tag, this.load(prediction));
+                yield !!inputs ? this.predict(tag, await this.cache.get(tag), inputs) : prediction;
             } else
                 yield prediction;
         }
