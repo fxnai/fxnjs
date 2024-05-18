@@ -3,7 +3,7 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import { FunctionConfig } from "../client"
+import { FunctionConfig } from "../function"
 
 export interface GraphPayload<T> {
     /**
