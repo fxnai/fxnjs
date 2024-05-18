@@ -3,7 +3,7 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import { GraphClient } from "../graph"
+import { GraphClient } from "../api"
 import { EnvironmentVariable } from "../types"
 
 export interface ListEnvironmentVariablesInput {

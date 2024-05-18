@@ -5,7 +5,7 @@
 
 import { isBrowser, isDeno, isNode, isWebWorker } from "browser-or-node"
 import parseDataURL from "data-urls"
-import { GraphClient } from "../graph"
+import { GraphClient } from "../api"
 import { Dtype, Image, PlainValue, Prediction, PredictorType, Tensor, TypedArray, UploadType, Value } from "../types"
 import { isFunctionValue, isImage, isTensor, isTypedArray } from "./value"
 import { StorageService } from "./storage"

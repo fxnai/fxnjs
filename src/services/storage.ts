@@ -4,7 +4,7 @@
 */
 
 import { decode, encode } from "base64-arraybuffer"
-import { GraphClient } from "../graph"
+import { GraphClient } from "../api"
 import { UploadType } from "../types"
 
 export interface CreateUploadURLInput {

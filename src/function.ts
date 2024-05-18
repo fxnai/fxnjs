@@ -3,7 +3,7 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import { GraphClient } from "./graph"
+import { GraphClient } from "./api"
 import { EnvironmentVariableService, PredictionService, PredictorService, StorageService, UserService } from "./services"
 
 export interface FunctionConfig {
