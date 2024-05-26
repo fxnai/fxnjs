@@ -1,3 +1,6 @@
+## 0.0.35
+*INCOMPLETE*
+
 ## 0.0.34
 + Added `Image.channels` field for inspecting image channel count.
 + Fixed edge prediction output `Image` having incorrect `width` and `height`.
