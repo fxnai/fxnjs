@@ -44,7 +44,7 @@ export function isTensor (value: any): value is Tensor {
  * @param value Input value.
  * @returns Whether the input value is an image.
  */
-export function isImage (value: any): value is Image {
+export function isImage (value: any): value is Image { // CHECK // Channel count
     return value != null &&
         (value.data instanceof Uint8Array || value.data instanceof Uint8ClampedArray) &&
         Number.isInteger(value.width) &&

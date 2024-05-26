@@ -1,5 +1,7 @@
 ## 0.0.34
-*INCOMPLETE*
++ Added `Image.channels` field for inspecting image channel count.
++ Fixed edge prediction output `Image` having incorrect `width` and `height`.
++ Updated to Function C 0.0.20.
 
 ## 0.0.33
 + Fixed edge prediction errors caused by request backpressure while the predictor is being loaded.

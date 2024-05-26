@@ -98,7 +98,7 @@ export class PredictionService {
     private fxnc: any;
     private readonly FXNC_DATA_ROOT = "/fxn";
     private readonly FXNC_CACHE_ROOT = `${this.FXNC_DATA_ROOT}/cache`;
-    private readonly FXNC_VERSION = "0.0.19";
+    private readonly FXNC_VERSION = "0.0.20";
     private readonly FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/edgefxn/${this.FXNC_VERSION}`;
 
     public constructor (client: GraphClient, storage: StorageService) {
@@ -251,10 +251,10 @@ export class PredictionService {
             return { data, type, shape: value.shape };
         }
         // Image
-        if (isImage(value)) {
+        if (isImage(value)) { // INCOMPLETE // Remove `canvas` dependency
             const canvas = createCanvas(value.width, value.height);
             const ctx = canvas.getContext("2d");
-            ctx.putImageData(value as ImageData, 0, 0);
+            ctx.putImageData(value as unknown as ImageData, 0, 0);
             const data = canvas.toDataURL();
             return { data, type: "image" };
         }
@@ -718,8 +718,8 @@ export class PredictionService {
                 case FXNDtype.String:   return fxnc.UTF8ToString(pData);
                 case FXNDtype.List:     return JSON.parse(fxnc.UTF8ToString(pData));
                 case FXNDtype.Dict:     return JSON.parse(fxnc.UTF8ToString(pData));
-                case FXNDtype.Image:    return toImage(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount), shape);
-                case FXNDtype.Binary:   return toArrayBuffer(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount));
+                case FXNDtype.Image:    return { data: cloneTypedArray(new Uint8ClampedArray(fxnc.HEAPU8.buffer, pData, elementCount)), width: shape[1], height: shape[0], channels: shape[2] };
+                case FXNDtype.Binary:   return cloneTypedArray(new Uint8Array(fxnc.HEAPU8.buffer, pData, elementCount)).buffer;
                 default:                throw new Error(`Cannot convert prediction output to value because of unknown type: ${type}`);
             }
         } finally {
@@ -818,14 +818,6 @@ function toBooleanArrayOrBoolean (buffer: ArrayBuffer, shape: number[]): boolean
     const tensor = new Uint8Array(buffer);
     const array = Array.from(tensor as Uint8Array).map(num => num !== 0);
     return shape.length > 0 ? array : array[0];
-}
-
-function toImage (data: Uint8Array, shape: number[]): Image {
-    return { data: cloneTypedArray(data), width: shape[2], height: shape[1] };
-}
-
-function toArrayBuffer (data: Uint8Array): ArrayBuffer {
-    return cloneTypedArray(data).buffer;
 }
 
 function getTypedArrayDtype (data: TypedArray | ArrayBuffer): FXNDtype {

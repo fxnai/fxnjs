@@ -23,7 +23,6 @@ export type TypedArray =
 
 /**
  * Image.
- * This is strucurally equal to `ImageData`.
  * @see https://developer.mozilla.org/en-US/docs/Web/API/ImageData
  */
 export interface Image {
@@ -40,6 +39,10 @@ export interface Image {
      * Image height.
      */
     height: number;
+    /**
+     * Image channels.
+     */
+    channels: number;
 }
 
 /**
