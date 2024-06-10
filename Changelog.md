@@ -1,5 +1,6 @@
 ## 0.0.35
-*INCOMPLETE*
++ Updated `Image.data` field type to `Uint8ClampedArray`.
++ Updated to Function C 0.0.24.
 
 ## 0.0.34
 + Added `Image.channels` field for inspecting image channel count.

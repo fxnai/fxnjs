@@ -28,9 +28,8 @@ export type TypedArray =
 export interface Image {
     /**
      * Pixel buffer.
-     * This MUST have an `RGBA8888` layout.
      */
-    data: Uint8Array | Uint8ClampedArray;
+    data: Uint8ClampedArray;
     /**
      * Image width.
      */
