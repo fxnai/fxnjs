@@ -94,7 +94,7 @@ export class PredictionService {
 
     private readonly client: GraphClient;
     private readonly storage: StorageService;
-    private readonly cache: Map<string, Promise<number>>;
+    private readonly cache: Map<string, number>;
     private fxnc: any;
     private readonly FXNC_DATA_ROOT = "/fxn";
     private readonly FXNC_CACHE_ROOT = `${this.FXNC_DATA_ROOT}/cache`;
@@ -104,7 +104,7 @@ export class PredictionService {
     public constructor (client: GraphClient, storage: StorageService) {
         this.client = client;
         this.storage = storage;
-        this.cache = new Map<string, Promise<number>>();
+        this.cache = new Map<string, number>();
     }
 
     /**
@@ -121,7 +121,7 @@ export class PredictionService {
             inputs,
             rawOutputs,
             dataUrlLimit,
-            client = CLIENT,
+            client = this.getClientId(),
             configuration = this.getConfigurationId()
         } = input;
         if (this.cache.has(tag) && !rawOutputs)
@@ -147,8 +147,8 @@ export class PredictionService {
         // Parse
         prediction.results = await this.parseResults(prediction.results, rawOutputs);
         if (prediction.type === PredictorType.Edge && !rawOutputs) {
-            this.cache.set(tag, this.load(prediction));
-            return !!inputs ? this.predict(tag, await this.cache.get(tag), inputs) : prediction;
+            this.cache.set(tag, await this.load(prediction));
+            return !!inputs ? this.predict(tag, this.cache.get(tag), inputs) : prediction;
         } else
             return prediction;
     }
@@ -168,7 +168,7 @@ export class PredictionService {
             inputs,
             rawOutputs,
             dataUrlLimit,
-            client = CLIENT,
+            client = this.getClientId(),
             configuration = this.getConfigurationId()
         } = input;
         if (this.cache.has(tag) && !rawOutputs) {
@@ -205,8 +205,8 @@ export class PredictionService {
             // Parse
             prediction.results = await this.parseResults(prediction.results, rawOutputs);
             if (prediction.type === PredictorType.Edge && !rawOutputs) {
-                this.cache.set(tag, this.load(prediction));
-                yield !!inputs ? this.predict(tag, await this.cache.get(tag), inputs) : prediction;
+                this.cache.set(tag, await this.load(prediction));
+                yield !!inputs ? this.predict(tag, this.cache.get(tag), inputs) : prediction;
             } else
                 yield prediction;
         }
@@ -398,6 +398,19 @@ export class PredictionService {
         const id = status === 0 ? fxnc.UTF8ToString(pId, BUFFER_SIZE) : null;
         fxnc._free(pId);
         cassert(status, `Failed to generate prediction configuration identifier with status: ${status}`);
+        return id;
+    }
+
+    private getClientId (): string {
+        const fxnc = this.fxnc;
+        if (!fxnc)
+            return isBrowser ? "browser" : "node";
+        const BUFFER_SIZE = 64;
+        const pId = fxnc._malloc(BUFFER_SIZE);
+        const status = fxnc._FXNConfigurationGetClientID(pId, BUFFER_SIZE);
+        const id = status === 0 ? fxnc.UTF8ToString(pId, BUFFER_SIZE) : null;
+        fxnc._free(pId);
+        cassert(status, `Failed to retrieve prediction client identifier with status: ${status}`);
         return id;
     }
 
@@ -883,13 +896,6 @@ function assert (condition: any, message: string) {
 function cassert (condition: number, message: string) {
     assert(condition === 0, message);        
 }
-
-const CLIENT = !isBrowser ? !isDeno ? !isNode ? !isWebWorker ?
-    "edge" : // e.g. Vercel Serverless Functions with edge runtime
-    "webworker" :
-    "node" :
-    "deno" :
-    "browser";
 
 class BoolArray extends Uint8Array { }
 
