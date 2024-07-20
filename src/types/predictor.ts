@@ -3,77 +3,33 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import { Dtype } from "./dtype"
-import { PlainValue, Value } from "./value"
+import { Dtype, PlainValue, Value } from "./value"
 import { Profile } from "./profile"
 
 /**
  * Predictor acceleration.
  */
-export enum Acceleration {
-    /**
-     * Predictor is run on the CPU.
-     */
-    CPU = "CPU",
-    /**
-     * Predictor is run on an Nvidia A40 GPU.
-     */
-    A40 = "A40",
-    /**
-     * Predictor is run on an Nvidia A100 GPU.
-     */
-    A100 = "A100"
-}
+export type Acceleration = "CPU" | "A40" | "A100";
 
 /**
  * Predictor access mode.
  */
-export enum AccessMode {
-    /**
-     * Predictor can be viewed and loaded by anyone.
-     */
-    Public = "PUBLIC",
-    /**
-     * Predictor can only viewed and loaded by owner.
-     */
-    Private = "PRIVATE",
-}
+export type AccessMode = "PUBLIC" | "PRIVATE";
 
 /**
  * Predictor status.
  */
-export enum PredictorStatus {
-    /**
-     * Predictor is being provisioned.
-     */
-    Provisioning = "PROVISIONING",
-    /**
-     * Predictor is active.
-     */
-    Active = "ACTIVE",
-    /**
-     * Predictor is invalid.
-     */
-    Invalid = "INVALID",
-    /**
-     * Predictor is archived.
-     */
-    Archived = "ARCHIVED"
-}
+export type PredictorStatus = "PROVISIONING" | "ACTIVE" | "INVALID" | "ARCHIVED";
 
 /**
  * Predictor type.
  */
-export enum PredictorType {
-    /**
-     * Cloud predictor.
-     */
-    Cloud = "CLOUD",
-    /**
-     * Edge predictor.
-     */
-    Edge = "EDGE"
-}
+export type PredictorType = "CLOUD" | "EDGE";
+
+/**
+ * Upload type.
+ */
+export type UploadType = "MEDIA" | "NOTEBOOK" | "VALUE";
 
 /**
  * Prediction function.

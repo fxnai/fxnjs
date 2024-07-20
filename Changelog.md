@@ -1,4 +1,9 @@
 ## 0.0.35
++ Refactored `Acceleration` type from enumeration to string literal.
++ Refactored `AccessMode` type from enumeration to string literal.
++ Refactored `PredictorStatus` type from enumeration to string literal.
++ Refactored `PredictorType` type from enumeration to string literal.
++ Refactored `UploadType` type from enumeration to string literal.
 + Updated `Image.data` field type to `Uint8ClampedArray`.
 + Updated to Function C 0.0.24.
 
