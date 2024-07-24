@@ -3,12 +3,13 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import { isBrowser } from "browser-or-node"
 import { FXNC } from "./types"
 
-const FXNC_VERSION = "0.0.24";
+const FXNC_VERSION = "0.0.25";
 const FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/fxnc/${FXNC_VERSION}`;
 let fxnc: FXNC = undefined;
+
+const isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
 
 export async function getFxnc (): Promise<FXNC> {
     // Check loaded

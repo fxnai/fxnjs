@@ -6,7 +6,8 @@
 import parseDataURL from "data-urls"
 import { GraphClient } from "../api"
 import { getFxnc, type FXNC } from "../c"
-import type { BoolArray, Dtype, Image, PlainValue, Prediction, Tensor, TypedArray, Value } from "../types"
+import { BoolArray } from "../types"
+import type { Dtype, Image, PlainValue, Prediction, Tensor, TypedArray, Value } from "../types"
 import { isFunctionValue, isImage, isTensor, isTypedArray } from "./value"
 import { StorageService } from "./storage"
 
@@ -119,21 +120,20 @@ export class PredictionService {
             configuration = fxnc?.FXNConfiguration.getUniqueId() ?? null
         } = input;
         if (this.cache.has(tag) && !rawOutputs)
-            return this.predict(tag, await this.cache.get(tag), inputs);
+            return this.predict(tag, this.cache.get(tag), inputs);
         // Serialize inputs
         const values = await this.serializeCloudInputs(inputs, dataUrlLimit);        
         // Query
         const url = this.getPredictUrl(tag, { rawOutputs: true, dataUrlLimit });
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": this.client.auth,
-                "fxn-client": client,
-                "fxn-configuration-token": configuration,
-            },
-            body: JSON.stringify(values)
-        });        
+        const body = JSON.stringify(values);
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            "Authorization": this.client.auth,
+            "fxn-client": client,
+        };
+        if (configuration != null)
+            headers["fxn-configuration-token"] = configuration;
+        const response = await fetch(url, { method: "POST", headers, body });        
         const prediction = await response.json();
         // Check
         if (!response.ok)
@@ -165,23 +165,22 @@ export class PredictionService {
             configuration = fxnc?.FXNConfiguration.getUniqueId() ?? null
         } = input;
         if (this.cache.has(tag) && !rawOutputs) {
-            yield this.predict(tag, await this.cache.get(tag), inputs);
+            yield this.predict(tag, this.cache.get(tag), inputs);
             return;
         }
         // Serialize inputs
         const values = await this.serializeCloudInputs(inputs, dataUrlLimit);
         // Request
         const url = this.getPredictUrl(tag, { stream: true, rawOutputs: true, dataUrlLimit });
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": this.client.auth,
-                "fxn-client": client,
-                "fxn-configuration-token": configuration,
-            },
-            body: JSON.stringify(values)
-        });
+        const body = JSON.stringify(values);
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            "Authorization": this.client.auth,
+            "fxn-client": client,
+        };
+        if (configuration != null)
+            headers["fxn-configuration-token"] = configuration;
+        const response = await fetch(url, { method: "POST", headers, body });
         // Stream
         const decoder = new TextDecoderStream();
         const reader = response.body.pipeThrough(decoder).getReader();
@@ -215,11 +214,11 @@ export class PredictionService {
         // Check
         if (!this.cache.has(tag))
             return false;
-        // Pop from cache
+        // Release
         const predictor = this.cache.get(tag);
         this.cache.delete(tag);
-        // Release predictor
         predictor.dispose();
+        // Throws on failure
         return true;
     }
 
