@@ -6,7 +6,7 @@
 import { expect, should, use } from "chai"
 import chaiAsPromised from "chai-as-promised"
 import mocha from "@testdeck/mocha"
-import { Function, PredictorType } from "../src"
+import { Function, type PredictorType } from "../src"
 
 @mocha.suite("Predictors")
 class PredictorTest {
@@ -16,7 +16,10 @@ class PredictorTest {
     public before () {
         should();
         use(chaiAsPromised);
-        this.fxn = new Function({ accessKey: process.env.ACCESS_KEY, url: process.env.API_URL });
+        this.fxn = new Function({
+            accessKey: process.env.ACCESS_KEY,
+            url: process.env.API_URL
+        });
     }
 
     @mocha.test
@@ -41,9 +44,11 @@ class PredictorTest {
     @mocha.test
     async "Should create a predictor" () {
         const tag = "@yusuf/js-test";
-        const type = PredictorType.Cloud;
-        const notebook = "https://fxnai.s3.amazonaws.com/notebooks/05d441948f1da5f2b49a1c/identity.ipynb";
-        const predictor = await this.fxn.predictors.create({ tag, type, notebook });
+        const predictor = await this.fxn.predictors.create({
+            tag,
+            type: "CLOUD",
+            notebook: "https://fxnai.s3.amazonaws.com/notebooks/05d441948f1da5f2b49a1c/identity.ipynb"
+        });
         expect(predictor.tag).to.equal(tag);
     }
 

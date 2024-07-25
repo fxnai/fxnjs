@@ -16,7 +16,10 @@ class PredictionTest {
     public before () {
         should();
         use(chaiAsPromised);
-        this.fxn = new Function({ accessKey: process.env.ACCESS_KEY, url: process.env.API_URL });
+        this.fxn = new Function({
+            accessKey: process.env.ACCESS_KEY,
+            url: process.env.API_URL
+        });
     }
 
     @mocha.test
@@ -56,13 +59,13 @@ class PredictionTest {
         expect(predictions.length).greaterThan(1);
     }
 
-    @mocha.test.skip
+    @mocha.test
     async "Should create an edge prediction" () {
         const prediction = await this.fxn.predictions.create({
-            tag: "@fxn/math",
+            tag: "@yusuf/area",
             inputs: { radius: 4 }
         });
         const results = prediction.results;
-
+        expect(results).to.not.be.empty;
     }
 }

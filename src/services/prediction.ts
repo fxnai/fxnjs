@@ -286,17 +286,6 @@ export class PredictionService {
             const data = await this.storage.upload({ name, buffer, type: "VALUE", dataUrlLimit, key });
             return { data, type: "bool", shape: [] };
         }
-        // Boolean array // We want benefits of `TypedArray` given that there's no `BoolArray`
-        if (
-            Array.isArray(value) &&
-            value.length > 0 &&
-            typeof(value[0]) === "boolean" &&
-            !value.some(e => typeof(e) !== "boolean") // fail faster for non-boolean arrays
-        ) {
-            const buffer = new Uint8Array(value as number[]).buffer;
-            const data = await this.storage.upload({ name, buffer, type: "VALUE", dataUrlLimit, key });
-            return { data, type: "bool", shape: [value.length] };
-        }
         // List
         if (Array.isArray(value)) {
             const serializedValue = JSON.stringify(value);
@@ -438,7 +427,7 @@ export class PredictionService {
             return FXNValue.createArray(new BigInt64Array([value]), null, 1);
         // Boolean
         if (typeof(value) === "boolean")
-            return FXNValue.createArray(new BoolArray([+value]), null, 1);
+            return FXNValue.createArray(new BoolArray([value]), null, 1);
         // Image
         if (isImage(value))
             return FXNValue.createImage(value, 0);

@@ -4,6 +4,9 @@ dist/
 build/
 logs/
 
+# Node binary
+lib/
+
 # Environment
 .env*
 !.env*example

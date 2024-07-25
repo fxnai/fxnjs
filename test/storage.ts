@@ -8,7 +8,7 @@ import { expect, should, use } from "chai"
 import chaiAsPromised from "chai-as-promised"
 import { readFileSync } from "fs"
 import mocha from "@testdeck/mocha"
-import { Function, UploadType } from "../src"
+import { Function, type UploadType } from "../src"
 
 @mocha.suite("Storage")
 class StorageTest {
@@ -24,17 +24,15 @@ class StorageTest {
     @mocha.test
     async "Should create upload URL" () {
         const name = "stablediffusion.ipynb";
-        const type = UploadType.Notebook;
-        const url = await this.fxn.storage.createUploadUrl({ name, type });
+        const url = await this.fxn.storage.createUploadUrl({ name, type: "NOTEBOOK" });
         expect(url).to.not.be.null;
     }
 
     @mocha.test
     async "Should create upload URL regardless of proxying" () {
         const name = "stablediffusion.ipynb";
-        const type = UploadType.Notebook;
         const fxn = new Function({ url: "https://www.google.com" });
-        const url = await fxn.storage.createUploadUrl({ name, type });
+        const url = await fxn.storage.createUploadUrl({ name, type: "NOTEBOOK" });
         expect(url).to.not.be.null;
     }
 
@@ -43,10 +41,9 @@ class StorageTest {
         const fileBuffer = readFileSync("test/media/cat_224.jpg");
         // Create data URL
         const name = "cat.jpg";
-        const type = UploadType.Media;
         const buffer = fileBuffer.buffer;
         const dataUrlLimit = 4 * 1024 * 1024;
-        const url = await this.fxn.storage.upload({ name, buffer, type, dataUrlLimit });
+        const url = await this.fxn.storage.upload({ name, buffer, type: "MEDIA", dataUrlLimit });
         // Check
         expect(url.startsWith("data:")).to.be.true;
         const b64Idx = url.indexOf(",");
@@ -58,9 +55,8 @@ class StorageTest {
     @mocha.test
     async "Should upload file" () {
         const name = "cat.jpg";
-        const type = UploadType.Media;
         const buffer = readFileSync("test/media/cat_224.jpg").buffer;
-        const url = await this.fxn.storage.upload({ name, buffer, type });
+        const url = await this.fxn.storage.upload({ name, buffer, type: "MEDIA" });
         expect(url.startsWith("https://")).to.be.true;
     }
 
@@ -69,10 +65,9 @@ class StorageTest {
         const fileBuffer = readFileSync("test/media/cat_224.jpg");
         // Create data URL
         const name = "cat.jpg";
-        const type = UploadType.Media;
         const buffer = fileBuffer.buffer;
         const dataUrlLimit = 4 * 1024 * 1024;
-        const url = await this.fxn.storage.upload({ name, buffer, type, dataUrlLimit });
+        const url = await this.fxn.storage.upload({ name, buffer, type: "MEDIA", dataUrlLimit });
         // Decode and check
         const downloadBuffer = await this.fxn.storage.download({ url });
         expect(fileBuffer.equals(Buffer.from(downloadBuffer))).to.be.true;

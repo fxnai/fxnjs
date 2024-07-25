@@ -3,8 +3,8 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import { PredictorType } from "./predictor"
-import { PlainValue, Value } from "./value"
+import type { PredictorType } from "./predictor"
+import type { PlainValue, Value } from "./value"
 
 /**
  * Prediction.

@@ -4,7 +4,7 @@
 */
 
 import { GraphClient } from "../api"
-import { Acceleration, AccessMode, EnvironmentVariable, Predictor, PredictorStatus, PredictorType } from "../types"
+import type { Acceleration, AccessMode, EnvironmentVariable, Predictor, PredictorStatus, PredictorType } from "../types"
 import { PROFILE_FIELDS } from "./user"
 
 export interface RetrievePredictorInput {

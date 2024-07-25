@@ -32,7 +32,12 @@ export type Dtype =
 /**
  * Boolean typed array.
  */
-export class BoolArray extends Uint8Array { }
+export class BoolArray extends Uint8Array {
+
+    constructor (values: ArrayBuffer | boolean[]) {
+        super(Array.isArray(values) ? values.map(v => +v) : values);
+    }
+}
 
 /**
  * A `TypedArray` instance.

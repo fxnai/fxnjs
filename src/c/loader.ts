@@ -9,17 +9,23 @@ const FXNC_VERSION = "0.0.25";
 const FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/fxnc/${FXNC_VERSION}`;
 let fxnc: FXNC = undefined;
 
-const isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
-
 export async function getFxnc (): Promise<FXNC> {
     // Check loaded
     if (fxnc)
         return fxnc;
-    // Check env
-    if (!isBrowser)
-        return null;
     // Load
-    fxnc = await new Promise((resolve, reject) => {
+    if (typeof window !== "undefined" && typeof window.document !== "undefined")
+        fxnc = await createWasmFxnc();
+    else if (typeof process !== "undefined" && process.versions != null && process.versions.node != null)
+        fxnc = await createNodeFxnc();
+    else
+        throw new Error("Function Error: Failed to load implementation because current environment is not supported");
+    // Return
+    return fxnc;
+}
+
+function createWasmFxnc (): Promise<FXNC> {
+    return new Promise<FXNC>((resolve, reject) => {
         const script = document.createElement("script");
         script.src = `${FXNC_LIB_URL_BASE}/Function.js`;
         script.onerror = error => reject(`Function Error: Failed to load Function implementation for in-browser predictions with error: ${error}`);
@@ -41,6 +47,9 @@ export async function getFxnc (): Promise<FXNC> {
         };
         document.body.appendChild(script);
     });
-    // Return
+}
+
+function createNodeFxnc (): Promise<FXNC> {
+    const fxnc = require("../../lib/Function.node");
     return fxnc;
 }
