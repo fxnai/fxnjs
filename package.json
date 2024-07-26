@@ -22,6 +22,9 @@
   "files": [
     "build"
   ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "main": "build/lib/index.js",
   "typings": "build/types/index.d.ts",
   "unpkg": "build/umd/fxn.js",
