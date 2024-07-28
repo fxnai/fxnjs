@@ -16,6 +16,9 @@ const config = {
     json(),
     //terser()
   ],
+  external: [
+    "../../lib/Function.node"
+  ]
 };
 
 export default config;

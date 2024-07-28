@@ -50,6 +50,10 @@ function createWasmFxnc (): Promise<FXNC> {
 }
 
 function createNodeFxnc (): Promise<FXNC> {
-    const fxnc = require("../../lib/Function.node");
-    return fxnc;
+    (globalThis as any).__require = require;
+    try {
+        return require("../../lib/Function.node");
+    } catch {
+        return null;
+    }
 }

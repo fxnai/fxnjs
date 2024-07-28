@@ -7,7 +7,7 @@ import parseDataURL from "data-urls"
 import { GraphClient } from "../api"
 import { getFxnc, type FXNC } from "../c"
 import { BoolArray } from "../types"
-import type { Dtype, Image, PlainValue, Prediction, Tensor, TypedArray, Value } from "../types"
+import type { Dtype, Image, PlainValue, Prediction, PredictorType, Tensor, TypedArray, Value } from "../types"
 import { isFunctionValue, isImage, isTensor, isTypedArray } from "./value"
 import { StorageService } from "./storage"
 
@@ -117,7 +117,7 @@ export class PredictionService {
             rawOutputs,
             dataUrlLimit,
             client = fxnc?.FXNConfiguration.getClientId() ?? "node",
-            configuration = fxnc?.FXNConfiguration.getUniqueId() ?? null
+            configuration = fxnc?.FXNConfiguration.getUniqueId()
         } = input;
         if (this.cache.has(tag) && !rawOutputs)
             return this.predict(tag, this.cache.get(tag), inputs);
@@ -162,7 +162,7 @@ export class PredictionService {
             rawOutputs,
             dataUrlLimit,
             client = fxnc?.FXNConfiguration.getClientId() ?? "node",
-            configuration = fxnc?.FXNConfiguration.getUniqueId() ?? null
+            configuration = fxnc?.FXNConfiguration.getUniqueId()
         } = input;
         if (this.cache.has(tag) && !rawOutputs) {
             yield this.predict(tag, this.cache.get(tag), inputs);
@@ -370,21 +370,14 @@ export class PredictionService {
             for (const [key, value] of Object.entries(inputs))
                 inputMap.set(key, this.toEdgeValue(value, fxnc));
             prediction = predictor.createPrediction(inputMap);
-            const { results: outputMap, latency, error, logs } = prediction;
+            const type: PredictorType = "EDGE";
+            const { id, results: outputMap, latency, error, logs } = prediction;
             const results = outputMap ? Array.from(
                 { length: outputMap.size },
                 (_, idx) => outputMap.get(outputMap.key(idx)).toObject()
             ) : null;
-            return {
-                id: prediction.id,
-                tag,
-                type: "EDGE",
-                created: new Date().toISOString() as unknown as Date,
-                results,
-                latency,
-                error,
-                logs
-            };
+            const created = new Date().toISOString() as unknown as Date;
+            return { id, tag, type, created, results, latency, error, logs };
         } finally {
             inputMap.dispose();
             prediction.dispose();
@@ -541,5 +534,5 @@ function getTypedArrayDtype (data: TypedArray | ArrayBuffer): Dtype {
 
 function assert (condition: any, message: string) {
     if (!condition)
-        throw new Error(`Function Error: ${message ?? "An unknown error occurred"}`);
+        throw new Error(message ?? "An unknown error occurred");
 }

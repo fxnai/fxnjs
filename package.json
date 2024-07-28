@@ -6,7 +6,7 @@
     "build": "npm run clean && npm run build:esm && npm run build:umd",
     "build:esm": "echo Using TypeScript && tsc --version && tsc --pretty",
     "build:umd": "npx rollup --config --bundleConfigAsCjs",
-    "test": "TS_NODE_PROJECT=tsconfig.test.json npx mocha --loader=ts-node/esm --experimental-specifier-resolution=node --require dotenv/config --colors --recursive --timeout 999999 test/**/*.ts",
+    "test": "TS_NODE_PROJECT=tsconfig.test.json npx mocha --require ts-node/register --require dotenv/config --colors --recursive --timeout 999999 test/**/*.ts",
     "clean": "rm -rf build"
   },
   "repository": {
