@@ -17,8 +17,8 @@ class PredictionTest {
         should();
         use(chaiAsPromised);
         this.fxn = new Function({
-            accessKey: process.env.ACCESS_KEY,
-            url: process.env.API_URL
+            accessKey: process.env.FXN_ACCESS_KEY,
+            url: process.env.FXN_API_URL
         });
     }
 

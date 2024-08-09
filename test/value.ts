@@ -17,11 +17,14 @@ class ValueTest {
     public before () {
         should();
         use(chaiAsPromised);
-        this.fxn = new Function({ accessKey: process.env.ACCESS_KEY, url: process.env.API_URL });
+        this.fxn = new Function({
+            accessKey: process.env.FXN_ACCESS_KEY,
+            url: process.env.FXN_API_URL
+        });
     }
 
     @mocha.test
-    async "Should rountrip Function value from float value" () {
+    async "Should rountrip Function value from float scalar" () {
         const input = 83.39;
         const value = await this.fxn.predictions.toValue({ value: input, name: "tensor", minUploadSize: 4096 });
         expect(value.type).to.equal("float32");
@@ -50,7 +53,7 @@ class ValueTest {
     }
 
     @mocha.test
-    async "Should rountrip Function value from int value" () {
+    async "Should rountrip Function value from int scalar" () {
         const input = 22_050;
         const value = await this.fxn.predictions.toValue({ value: input, name: "tensor", minUploadSize: 4096 });
         expect(value.type).to.equal("int32");
@@ -80,7 +83,7 @@ class ValueTest {
     }
 
     @mocha.test
-    async "Should rountrip Function value from bool value" () {
+    async "Should rountrip Function value from bool scalar" () {
         const input = true;
         const value = await this.fxn.predictions.toValue({ value: input, name: "tensor", minUploadSize: 4096 });
         expect(value.type).to.equal("bool");
@@ -99,7 +102,7 @@ class ValueTest {
     }
 
     @mocha.test
-    async "Should create prediction on image value" () {
+    async "Should roundtrip Function value from image" () {
         const image = await ValueTest.loadImageDataFromPath("test/media/cat_224.jpg");
         const value = await this.fxn.predictions.toValue({
             value: image,
@@ -114,7 +117,7 @@ class ValueTest {
     }
 
     @mocha.test
-    async "Should consider null value to be Function value" () {
+    async "Should roundtrip Function value from null" () {
         const value = { type: "null" as const };
         expect(isFunctionValue(value)).to.be.true;
         expect(this.fxn.predictions.toObject({ value }) === null);

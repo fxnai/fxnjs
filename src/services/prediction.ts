@@ -242,7 +242,7 @@ export class PredictionService {
             return { data, type, shape: value.shape };
         }
         // Image
-        if (isImage(value)) { // CHECK // NodeJS
+        if (isImage(value)) {
             const fxnc = await getFxnc();
             assert(fxnc, "Failed to convert image to value because Function implementation has not been loaded");
             let imageValue: FXNValue = null;
