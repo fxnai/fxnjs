@@ -1,3 +1,18 @@
+## 0.0.37
++ Added edge prediction support on Node.js when running on macOS and Windows. Linux coming soon!
++ Improved edge predictor memory consumption when predictors input and output tensors.
++ Fixed `fxn.predictions.create` method with large input images resulting in `413 Payload Too Large` error.
++ Fixed `Prediction.configuration` being populated with invalid token when edge prediction is created with `null` configuration identifier.
++ Fixed package install error due to required script excluded from packaging process.
++ Fixed package install error due to missing dependencies.
++ Refactored `Acceleration` type from enumeration to string literal.
++ Refactored `AccessMode` type from enumeration to string literal.
++ Refactored `PredictorStatus` type from enumeration to string literal.
++ Refactored `PredictorType` type from enumeration to string literal.
++ Refactored `UploadType` type from enumeration to string literal.
++ Updated `Image.data` field type to `Uint8ClampedArray`.
++ Updated to Function C 0.0.26.
+
 ## 0.0.36
 + Added edge prediction support on Node.js when running on macOS and Windows. Linux coming soon!
 + Improved edge predictor memory consumption when predictors input and output tensors.
