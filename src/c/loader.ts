@@ -50,7 +50,11 @@ function createWasmFxnc (): Promise<FXNC> {
 }
 
 function createNodeFxnc (): Promise<FXNC> { // CHECK // Fix this
-    (globalThis as any).__require = require;
-    try { return require("../../lib/Function.node"); } catch { }
-    try { return require("../../../lib/Function.node"); } catch { return null; }
+    const requireFunc = typeof __webpack_require__ === "function" ? __non_webpack_require__ : require;
+    (globalThis as any).__require = requireFunc;
+    try { return requireFunc("../../lib/Function.node"); } catch { }
+    try { return requireFunc("../../../lib/Function.node"); } catch { return null; }
 }
+
+declare var __webpack_require__: any;
+declare var __non_webpack_require__: any;
