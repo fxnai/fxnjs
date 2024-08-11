@@ -1,6 +1,6 @@
 {
   "name": "fxnjs",
-  "version": "0.0.35",
+  "version": "0.0.36",
   "description": "Run AI prediction functions in your JavaScript and Node.js apps.",
   "scripts": {
     "build": "npm run clean && npm run build:esm && npm run build:umd",
@@ -21,7 +21,8 @@
   },
   "homepage": "https://fxn.ai",
   "files": [
-    "build"
+    "build",
+    "scripts"
   ],
   "engines": {
     "node": ">=18.0.0"
