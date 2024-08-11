@@ -17,7 +17,7 @@ const config = {
     //terser()
   ],
   external: [
-    "../../lib/Function.node"
+    /(?:.*[\\/])?Function\.node$/
   ]
 };
 

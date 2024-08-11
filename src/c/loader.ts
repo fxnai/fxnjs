@@ -5,7 +5,7 @@
 
 import { FXNC } from "./types"
 
-const FXNC_VERSION = "0.0.25";
+const FXNC_VERSION = "0.0.26";
 const FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/fxnc/${FXNC_VERSION}`;
 let fxnc: FXNC = undefined;
 
@@ -49,11 +49,8 @@ function createWasmFxnc (): Promise<FXNC> {
     });
 }
 
-function createNodeFxnc (): Promise<FXNC> {
+function createNodeFxnc (): Promise<FXNC> { // CHECK // Fix this
     (globalThis as any).__require = require;
-    try {
-        return require("../../lib/Function.node");
-    } catch {
-        return null;
-    }
+    try { return require("../../lib/Function.node"); } catch { }
+    try { return require("../../../lib/Function.node"); } catch { return null; }
 }
