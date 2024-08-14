@@ -379,8 +379,8 @@ export class PredictionService {
             const created = new Date().toISOString() as unknown as Date;
             return { id, tag, type, created, results, latency, error, logs };
         } finally {
-            inputMap.dispose();
-            prediction.dispose();
+            inputMap?.dispose();
+            prediction?.dispose();
         }
     }
     
@@ -502,7 +502,7 @@ interface TensorConstructible {
     new (buffer: ArrayBuffer): TypedArray;
 }
 
-function toImage (buffer: ArrayBuffer, fxnc: FXNC): Image { // CHECK // NodeJS
+function toImage (buffer: ArrayBuffer, fxnc: FXNC): Image {
     const { FXNValue } = fxnc;
     let bufferValue: FXNValue;
     let imageValue: FXNValue;
