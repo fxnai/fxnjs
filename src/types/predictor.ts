@@ -3,7 +3,7 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import type { Profile } from "./profile"
+import type { Profile } from "./user"
 import type { Dtype, Value } from "./value"
 
 /**

@@ -116,8 +116,8 @@ export type Value =
  * @returns Whether the input value is a tensor.
  */
 export function isTensor (value: any): value is Tensor {
-    return value != null &&
-        ArrayBuffer.isView(value.data) &&
+    return value != null            &&
+        isTypedArray(value.data)    &&
         Array.isArray(value.shape);
 }
 
