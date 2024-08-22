@@ -158,6 +158,7 @@ export class PredictionService {
             configuration = fxnc.FXNConfiguration.create();
             configuration.tag = tag;
             configuration.token = prediction.configuration;
+            configuration.acceleration = acceleration;
             for (const resource of prediction.resources)
                 if (["dso", "bin"].includes(resource.type))
                     await configuration.addResource(resource);

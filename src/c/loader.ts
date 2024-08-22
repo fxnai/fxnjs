@@ -5,7 +5,7 @@
 
 import { FXNC } from "./types"
 
-const FXNC_VERSION = "0.0.26";
+const FXNC_VERSION = "0.0.27";
 const FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/fxnc/${FXNC_VERSION}`;
 let fxnc: FXNC = undefined;
 
