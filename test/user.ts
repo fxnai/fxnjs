@@ -5,9 +5,8 @@
 
 import { expect, should, use } from "chai"
 import chaiAsPromised from "chai-as-promised"
-import { randomBytes } from "crypto"
 import mocha from "@testdeck/mocha"
-import { Function, User } from "../src"
+import { Function, type User } from "../src"
 
 @mocha.suite("Users")
 class UserTest {
@@ -36,13 +35,5 @@ class UserTest {
         const user = await this.fxn.users.retrieve({ username }) as User; // this is a `Profile`
         expect(user.email).to.be.undefined;
         expect(user.username).to.equal(username);
-    }
-
-    @mocha.test
-    async "Should update the current user's profile" () {
-        const bio = randomBytes(100).toString("hex");
-        const user = await this.fxn.users.update({ bio });
-        expect(user.bio).to.equal(bio);
-        expect(user.email).to.not.be.undefined;
     }
 }

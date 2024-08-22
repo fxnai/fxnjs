@@ -3,8 +3,7 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import type { PredictorType } from "./predictor"
-import type { PlainValue, Value } from "./value"
+import type { Value } from "./value"
 
 /**
  * Prediction.
@@ -19,27 +18,21 @@ export interface Prediction {
      */
     tag: string;
     /**
-     * Prediction type.
-     */
-    type: PredictorType;
-    /**
      * Date created.
      */
     created: Date;
     /**
      * Prediction configuration.
-     * This is only populated for `EDGE` predictions.
      */
     configuration?: string;
     /**
      * Predictor resources.
-     * This is only populated for `EDGE` predictions.
      */
     resources?: PredictionResource[];
     /**
      * Prediction results.
      */
-    results?: (Value | PlainValue)[];
+    results?: Value[];
     /**
      * Prediction latency in milliseconds.
      */

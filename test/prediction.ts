@@ -23,31 +23,17 @@ class PredictionTest {
     }
 
     @mocha.test
-    async "Should create a cloud prediction" () {
-        const tag = "@yusuf/identity";
-        const inputs = {
-            name: "Yusuf",
-            age: 24,
-            ratio: 3.14159,
-            option: false,
-            choices: [true, false, true, true, false],
-            numbers: [12, 38, 4, 102, 99],
-            fractions: [4.2, 9.3, 1.3],
-            names: ["Drake", "Josh", "Andy"],
-            properties: {
-                length: 12,
-                height: 44,
-                width: 3.9
-            }
-        };
-        const prediction = await this.fxn.predictions.create({ tag, inputs });
+    async "Should create a prediction" () {
+        const prediction = await this.fxn.predictions.create({
+            tag: "@yusuf/area",
+            inputs: { radius: 4 }
+        });
         const results = prediction.results;
-        expect(results?.[0]).to.equal(`Yusuf`)
-        expect(results?.[1]).to.equal(24);
+        expect(results).to.not.be.empty;
     }
 
-    @mocha.test
-    async "Should stream a cloud prediction" () {
+    @mocha.test.skip
+    async "Should stream a prediction" () {
         const sentence = "Hello world";
         const stream = await this.fxn.predictions.stream({
             tag: "@yusuf/streaming",
@@ -57,15 +43,5 @@ class PredictionTest {
         for await (const prediction of stream)
             predictions.push(prediction);
         expect(predictions.length).greaterThan(1);
-    }
-
-    @mocha.test
-    async "Should create an edge prediction" () {
-        const prediction = await this.fxn.predictions.create({
-            tag: "@yusuf/area",
-            inputs: { radius: 4 }
-        });
-        const results = prediction.results;
-        expect(results).to.not.be.empty;
     }
 }

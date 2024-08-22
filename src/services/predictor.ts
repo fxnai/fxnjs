@@ -4,7 +4,7 @@
 */
 
 import { GraphClient } from "../api"
-import type { Acceleration, AccessMode, EnvironmentVariable, Predictor, PredictorStatus, PredictorType } from "../types"
+import type { Predictor, PredictorStatus } from "../types"
 import { PROFILE_FIELDS } from "./user"
 
 export interface RetrievePredictorInput {
@@ -46,70 +46,6 @@ export interface SearchPredictorsInput {
      * Pagination count.
      */
     count?: number;
-}
-
-export interface CreatePredictorInput {
-    /**
-     * Predictor tag.
-     */
-    tag: string;
-    /**
-     * Notebook URL.
-     * This MUST be a `NOTEBOOK` upload URL.
-     */
-    notebook: string;
-    /**
-     * Predictor type.
-     * This defaults to `CLOUD`.
-     */
-    type?: PredictorType;
-    /**
-     * Predictor access mode.
-     * This defaults to `PRIVATE`.
-     */
-    access?: AccessMode;
-    /**
-     * Predictor description.
-     * This must be under 200 characters long.
-     */
-    description?: string;
-    /**
-     * Predictor media URL.
-     */
-    media?: string;
-    /**
-     * Predictor acceleration.
-     * This only applies for `CLOUD` predictors.
-     * This defaults to `CPU`.
-     */
-    acceleration?: Acceleration;
-    /**
-     * Predictor environment variables.
-     */
-    environment?: EnvironmentVariable[];
-    /**
-     * Predictor license URL.
-     */
-    license?: string;
-    /**
-     * Overwrite any existing predictor with the same tag.
-     * Existing predictor will be deleted.
-     */
-    overwrite?: boolean;
-}
-
-export interface DeletePredictorInput {
-    /**
-     * Predictor tag.
-     */
-    tag: string;
-}
-
-export interface ArchivePredictorInput {
-    /**
-     * Predictor tag.
-     */
-    tag: string
 }
 
 export class PredictorService {
@@ -173,55 +109,6 @@ export class PredictorService {
         });
         return predictors;
     }
-
-    /**
-     * Create a predictor.
-     * @param input Input arguments.
-     * @returns Predictor.
-     */
-    public async create (input: CreatePredictorInput): Promise<Predictor> {
-        const { data: { predictor } } = await this.client.query<{ predictor: Predictor }>({
-            query: `mutation ($input: CreatePredictorInput!) {
-                predictor: createPredictor (input: $input) {
-                    ${PREDICTOR_FIELDS}
-                }
-            }`,
-            variables: { input }
-        });
-        return predictor;
-    }
-
-    /**
-     * Delete a predictor.
-     * @param input Input arguments.
-     * @returns Whether the predictor was successfully deleted.
-     */
-    public async delete (input: DeletePredictorInput): Promise<boolean> {
-        const { data: { result } } = await this.client.query<{ result: boolean }>({
-            query: `mutation ($input: DeletePredictorInput!) {
-                result: deletePredictor (input: $input)
-            }`,
-            variables: { input }
-        });
-        return result;
-    }
-
-    /**
-     * Archive an active predictor.
-     * @param input Input arguments.
-     * @returns Archived predictor.
-     */
-    public async archive (input: ArchivePredictorInput): Promise<Predictor> {
-        const { data: { predictor } } = await this.client.query<{ predictor: Predictor }>({
-            query: `mutation ($input: ArchivePredictorInput!) {
-                archivePredictor (input: $input) {
-                    ${PREDICTOR_FIELDS}
-                }
-            }`,
-            variables: { input }
-        });
-        return predictor;
-    }
 }
 
 export const PREDICTOR_FIELDS = `
@@ -230,7 +117,6 @@ owner {
     ${PROFILE_FIELDS}
 }
 name
-type
 status
 access
 predictions
@@ -238,7 +124,6 @@ created
 description
 card
 media
-acceleration
 signature {
     inputs {
         name

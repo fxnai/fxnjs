@@ -1,5 +1,20 @@
 ## 0.0.39
-*INCOMPLETE*
++ Updated `Acceleration` type from string constant to integer enumeration.
++ Updated `Value` type to be a union of plain JavaScript types.
++ Removed `isFunctionValue` type predicate function.
++ Removed `PredictorType` type.
++ Removed `UploadType` type.
++ Removed `fxn.users.update` method.
++ Removed `fxn.predictors.create` method.
++ Removed `fxn.predictors.delete` method.
++ Removed `fxn.predictors.archive` method.
++ Removed `fxn.predictions.toObject` method.
++ Removed `fxn.predictios.toValue` method.
++ Removed `fxn.environmentVariables` field.
++ Removed `fxn.storage` field.
++ Removed `Predictor.type` field.
++ Removed `Predictor.acceleration` field.
++ Removed `Prediction.type` field.
 
 ## 0.0.38
 + Fixed Webpack bundler errors caused by Function.

@@ -31,7 +31,6 @@
   "typings": "build/types/index.d.ts",
   "unpkg": "build/umd/fxn.js",
   "dependencies": {
-    "axios": "^1.7.3",
     "base64-arraybuffer": "^1.0.2",
     "chalk": "^5.3.0",
     "data-urls": "^3.0.1"

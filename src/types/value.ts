@@ -94,9 +94,9 @@ export interface Tensor {
 }
 
 /**
- * Plain value.
+ * Prediction value.
  */
-export type PlainValue =
+export type Value =
     string                          |
     number                          |
     number[]                        |
@@ -111,21 +111,48 @@ export type PlainValue =
     ArrayBuffer;
 
 /**
- * Prediction value.
+ * Check whether an input value is a Function `Tensor`.
+ * @param value Input value.
+ * @returns Whether the input value is a tensor.
  */
-export interface Value {
-    /**
-     * Value data URL.
-     * This could either be a remote or data URL.
-     */
-    data?: string;
-    /**
-     * Value data type.
-     */
-    type: Dtype;
-    /**
-     * Value shape.
-     * This is only populated for array values.
-     */
-    shape?: number[];
+export function isTensor (value: any): value is Tensor {
+    return value != null &&
+        ArrayBuffer.isView(value.data) &&
+        Array.isArray(value.shape);
+}
+
+/**
+ * Check whether an input value is a Function `Image`.
+ * @param value Input value.
+ * @returns Whether the input value is an image.
+ */
+export function isImage (value: any): value is Image {
+    return value != null                                &&
+        (
+            value.data instanceof Uint8Array            ||
+            value.data instanceof Uint8ClampedArray
+        )                                               &&
+        Number.isInteger(value.width)                   &&
+        Number.isInteger(value.height)                  &&
+        [1, 3, 4].includes(value.channels);
+}
+
+/**
+ * Check whether an input value is a `TypedArray`
+ * @param value Input value.
+ * @returns Whether the input value is a typed array.
+ */
+export function isTypedArray (value: any): value is TypedArray {
+    if (value instanceof Float32Array)      return true;
+    if (value instanceof Float64Array)      return true;
+    if (value instanceof Int8Array)         return true;
+    if (value instanceof Int16Array)        return true;
+    if (value instanceof Int32Array)        return true;
+    if (value instanceof BigInt64Array)     return true;
+    if (value instanceof Uint8Array)        return true;
+    if (value instanceof Uint8ClampedArray) return true;
+    if (value instanceof Uint16Array)       return true;
+    if (value instanceof Uint32Array)       return true;
+    if (value instanceof BigUint64Array)    return true;
+    return false;
 }

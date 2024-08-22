@@ -3,13 +3,30 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import { Dtype, PlainValue, Value } from "./value"
-import { Profile } from "./profile"
+import type { Profile } from "./profile"
+import type { Dtype, Value } from "./value"
 
 /**
  * Predictor acceleration.
  */
-export type Acceleration = "CPU" | "A40" | "A100";
+export enum Acceleration {
+    /**
+     * Use the default acceleration for this platform.
+     */
+    Default = 0,
+    /**
+     * Predictions run on the CPU.
+     */
+    CPU     = 1 << 0,
+    /**
+     * Predictions run on the GPU.
+     */
+    GPU     = 1 << 1,
+    /**
+     * Predictions run on the neural processor.
+     */
+    NPU     = 1 << 2,
+}
 
 /**
  * Predictor access mode.
@@ -20,16 +37,6 @@ export type AccessMode = "PUBLIC" | "PRIVATE";
  * Predictor status.
  */
 export type PredictorStatus = "PROVISIONING" | "ACTIVE" | "INVALID" | "ARCHIVED";
-
-/**
- * Predictor type.
- */
-export type PredictorType = "CLOUD" | "EDGE";
-
-/**
- * Upload type.
- */
-export type UploadType = "MEDIA" | "NOTEBOOK" | "VALUE";
 
 /**
  * Prediction function.
@@ -47,10 +54,6 @@ export interface Predictor {
      * Predictor name.
      */
     name: string;
-    /**
-     * Predictor name.
-     */
-    type: PredictorType;
     /**
      * Predictor status.
      */
@@ -84,11 +87,6 @@ export interface Predictor {
      * We encourage animated GIF's where possible.
      */
     media?: string;
-    /**
-     * Predictor acceleration.
-     * This only applies to `CLOUD` predictors.
-     */
-    acceleration?: Acceleration;
     /**
      * Predictor provisioning error.
      * This is populated when the predictor `status` is `INVALID`.
@@ -147,7 +145,7 @@ export interface Parameter {
     /**
      * Parameter default value.
      */
-    defaultValue?: PlainValue | Value;
+    defaultValue?: Value;
     /**
      * Parameter JSON schema.
      * This is only populated for `list` and `dict` parameters.

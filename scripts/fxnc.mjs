@@ -3,7 +3,6 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import axios from "axios"
 import chalk from "chalk"
 import { promises as fsPromises } from "node:fs"
 import { dirname, join } from "node:path"
@@ -52,11 +51,11 @@ const fxncPath = join(libDir, getFxncName());
 const fxnodePath = join(libDir, "Function.node");
 
 try {
-  const fxncResponse = await axios({ url: fxncUrl, method: "GET", responseType: "arraybuffer" });
-  const fxnodeResponse = await axios({ url: fxnodeUrl, method: "GET", responseType: "arraybuffer" });
+  const fxncResponse = await fetch(fxncUrl);
+  const fxnodeResponse = await fetch(fxnodeUrl);
   await mkdir(libDir, { recursive: true });
-  await writeFile(fxncPath, fxncResponse.data);
-  await writeFile(fxnodePath, fxnodeResponse.data);
+  await writeFile(fxncPath, Buffer.from(await fxncResponse.arrayBuffer()));
+  await writeFile(fxnodePath, Buffer.from(await fxnodeResponse.arrayBuffer()));
 } catch (e) {
-  console.error(chalk.redBright(`Function Error: Failed to download library from '${e.config.url}' with error: ${e.message}. Edge predictions will fail.`));
+  console.error(chalk.redBright(`Function Error: Failed to download library with error: ${e.message}. Predictions will fail.`));
 }
