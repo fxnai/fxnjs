@@ -4,7 +4,7 @@
 
 [![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Finvites%2Fy5vwgXkz2f%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&logo=discord&logoColor=white&label=Function%20community)](https://fxn.ai/community)
 
-Run AI prediction functions (a.k.a "predictors") in the browser and Node.js. With Function, you can build AI-powered apps by creating and composing GPU-accelerated predictors that run in the cloud. In a few steps:
+Run prediction functions (a.k.a "predictors") locally in the browser and Node.js, with full GPU acceleration and zero dependencies. In a few steps:
 
 > [!CAUTION]
 > **Never embed access keys client-side (i.e. in the browser)**. Instead, create a proxy URL in your backend.
@@ -33,10 +33,8 @@ Then make a prediction:
 ```js
 // Make a prediction
 const prediction = await fxn.predictions.create({
-    tag: "@samplefxn/greeting",
-    inputs: {
-        name: "Rhea"
-    }
+    tag: "@fxn/greeting",
+    inputs: { name: "Rhea" }
 });
 // Log the result
 console.log(prediction.results[0]);
