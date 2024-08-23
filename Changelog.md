@@ -1,3 +1,6 @@
+## 0.0.40
+*INCOMPLETE*
+
 ## 0.0.39
 + Updated `Acceleration` type from string constant to integer enumeration.
 + Updated `Value` type to be a union of plain JavaScript types.
