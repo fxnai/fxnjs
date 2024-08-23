@@ -4,7 +4,7 @@
 
 [![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Finvites%2Fy5vwgXkz2f%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&logo=discord&logoColor=white&label=Function%20community)](https://fxn.ai/community)
 
-Run prediction functions (a.k.a "predictors") locally in the browser and Node.js, with full GPU acceleration and zero dependencies. In a few steps:
+Run Python functions (a.k.a "predictors") locally in the browser and Node.js, with full GPU acceleration and zero dependencies. In a few steps:
 
 > [!CAUTION]
 > **Never embed access keys client-side (i.e. in the browser)**. Instead, create a proxy URL in your backend.
