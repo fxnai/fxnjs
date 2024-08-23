@@ -4,48 +4,13 @@
 */
 
 import { GraphClient } from "../api"
-import type { Predictor, PredictorStatus } from "../types"
-import { PROFILE_FIELDS } from "./user"
+import type { Predictor } from "../types"
 
 export interface RetrievePredictorInput {
     /**
      * Predictor tag.
      */
     tag: string;
-}
-
-export interface ListPredictorsInput {
-    /**
-     * Predictor status.
-     */
-    status?: PredictorStatus;
-    /**
-     * Predictor owner username.
-     */
-    owner?: string;
-    /**
-     * Pagination offset.
-     */
-    offset?: number;
-    /**
-     * Pagination count.
-     */
-    count?: number;
-}
-
-export interface SearchPredictorsInput {
-    /**
-     * Search query.
-     */
-    query?: string;
-    /**
-     * Pagination offset.
-     */
-    offset?: number;
-    /**
-     * Pagination count.
-     */
-    count?: number;
 }
 
 export class PredictorService {
@@ -72,49 +37,18 @@ export class PredictorService {
         });
         return predictor;
     }
-
-    /**
-     * List my predictors.
-     * @param input Input arguments.
-     * @returns Predictors.
-     */
-    public async list (input?: ListPredictorsInput): Promise<Predictor[]> {
-        const { owner: username, ...predictors } = input ?? { };
-        const { data: { user } } = await this.client.query<{ user: { predictors: Predictor[] } }>({
-            query: `query ($user: UserInput, $predictors: UserPredictorsInput) {
-                user (input: $user) {
-                    predictors (input: $predictors) {
-                        ${PREDICTOR_FIELDS}
-                    }
-                }
-            }`,
-            variables: { user: username && { username }, predictors }
-        });
-        return user?.predictors ?? null;
-    }
-
-    /**
-     * Search active predictors.
-     * @param input Input arguments
-     * @returns Predictors.
-     */
-    public async search (input?: SearchPredictorsInput): Promise<Predictor[]> {
-        const { data: { predictors } } = await this.client.query<{ predictors: Predictor[] }>({
-            query: `query ($input: PredictorsInput) {
-                predictors (input: $input) {
-                    ${PREDICTOR_FIELDS}
-                }
-            }`,
-            variables: { input }
-        });
-        return predictors;
-    }
 }
 
-export const PREDICTOR_FIELDS = `
+const PREDICTOR_FIELDS = `
 tag
 owner {
-    ${PROFILE_FIELDS}
+    username
+    name
+    avatar
+    bio
+    website
+    github
+    created
 }
 name
 status

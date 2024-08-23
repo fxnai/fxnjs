@@ -23,17 +23,8 @@ class UserTest {
     }
 
     @mocha.test
-    async "Should retrieve the current authed user" () {
+    async "Should retrieve the current user" () {
         const user = await this.fxn.users.retrieve() as User;
-        expect(user.email).to.not.be.undefined;
         expect(user.username).to.equal("yusuf");
-    }
-
-    @mocha.test
-    async "Should retrieve a user profile" () {
-        const username = "natsuite";
-        const user = await this.fxn.users.retrieve({ username }) as User; // this is a `Profile`
-        expect(user.email).to.be.undefined;
-        expect(user.username).to.equal(username);
     }
 }

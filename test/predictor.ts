@@ -23,21 +23,9 @@ class PredictorTest {
     }
 
     @mocha.test
-    async "Should retrieve a valid predictor" () {
+    async "Should retrieve a predictor" () {
         const tag = "@yusuf/identity";
         const predictor = await this.fxn.predictors.retrieve({ tag });
         expect(predictor.tag).to.equal(tag);
-    }
-
-    @mocha.test
-    async "Should list predictors owned by user" () {
-        const predictors = await this.fxn.predictors.list();
-        expect(predictors.length).to.greaterThan(0);
-    }
-
-    @mocha.test
-    async "Should search active predictors" () {
-        const predictors = await this.fxn.predictors.search();
-        expect(predictors.length).to.greaterThan(0);
     }
 }

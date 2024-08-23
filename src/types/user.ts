@@ -4,9 +4,9 @@
 */
 
 /**
- * Function user profile.
+ * Function user.
  */
-export interface Profile {
+export interface User {
     /**
      * Function username.
      * This is always lowercase and uniquely identifies a user account.
@@ -36,14 +36,4 @@ export interface Profile {
      * User GitHub.
      */
     github?: string;
-}
-
-/**
- * Function user.
- */
-export interface User extends Profile {
-    /**
-     * User email address.
-     */
-    email: string;
 }

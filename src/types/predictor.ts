@@ -3,7 +3,7 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import type { Profile } from "./user"
+import type { User } from "./user"
 import type { Dtype, Value } from "./value"
 
 /**
@@ -49,7 +49,7 @@ export interface Predictor {
     /**
      * Predictor owner.
      */
-    owner: Profile;
+    owner: User;
     /**
      * Predictor name.
      */
