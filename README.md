@@ -40,6 +40,9 @@ const prediction = await fxn.predictions.create({
 console.log(prediction.results[0]);
 ```
 
+> [!TIP]
+> Explore public predictors [on Function](https://fxn.ai/explore) or [create your own](https://fxn.ai/waitlist).
+
 ___
 
 ## Useful Links
