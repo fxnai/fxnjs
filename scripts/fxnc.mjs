@@ -9,8 +9,24 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 const { writeFile, mkdir } = fsPromises;
 
-const FXNC_VERSION = "0.0.26";
-const FXNODE_VERSION = "0.0.2"; 
+const FXNC_VERSION = "0.0.28";
+const FXNODE_VERSION = "0.0.3";
+
+function getLibName () {
+  switch (process.platform) {
+    case "linux": return "libFunction";
+    default:      return "Function";
+  }
+}
+
+function getLibSuffix () {
+  switch (process.platform) {
+    case "darwin":  return ".dylib";
+    case "linux":   return ".so";
+    case "win32":   return ".dll";
+    default:        return "";
+  }
+}
 
 function getPlatformId () {
   switch (process.platform) {
@@ -29,25 +45,11 @@ function getArchId () {
   }
 }
 
-function getFxncUrl () {
-  const suffix = { darwin: ".dylib", linux: ".so", win32: ".dll" }[process.platform] ?? "";
-  const base = process.platform === "linux" ? "libFunction" : "Function";
-  return `https://cdn.fxn.ai/fxnc/${FXNC_VERSION}/${base}-${getPlatformId()}-${getArchId()}${suffix}`;
-}
-
-function getFxncName () {
-  switch (process.platform) {
-    case "darwin":  return "Function.dylib";
-    case "win32":   return "Function.dll";
-    default:        return "libFunction.so";
-  }
-}
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 const fxnodeUrl = `https://cdn.fxn.ai/fxnode/${FXNODE_VERSION}/Function-${getPlatformId()}-${getArchId()}.node`;
-const fxncUrl = getFxncUrl();
+const fxncUrl = `https://cdn.fxn.ai/fxnc/${FXNC_VERSION}/${getLibName()}-${getPlatformId()}-${getArchId()}${getLibSuffix()}`;
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const libDir = join(__dirname, "..", "lib");
-const fxncPath = join(libDir, getFxncName());
+const fxncPath = join(libDir, `${getLibName()}${getLibSuffix()}`);
 const fxnodePath = join(libDir, "Function.node");
 
 try {
