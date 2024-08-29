@@ -5,8 +5,6 @@
 
 import { FXNC } from "./types"
 
-const FXNC_VERSION = "0.0.27";
-const FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/fxnc/${FXNC_VERSION}`;
 let fxnc: FXNC = undefined;
 
 export async function getFxnc (): Promise<FXNC> {
@@ -25,6 +23,8 @@ export async function getFxnc (): Promise<FXNC> {
 }
 
 function createWasmFxnc (): Promise<FXNC> {
+    const FXNC_VERSION = "0.0.27"; // CHECK
+    const FXNC_LIB_URL_BASE = `https://cdn.fxn.ai/fxnc/${FXNC_VERSION}`;
     return new Promise<FXNC>((resolve, reject) => {
         const script = document.createElement("script");
         script.src = `${FXNC_LIB_URL_BASE}/Function.js`;

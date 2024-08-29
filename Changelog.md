@@ -1,5 +1,5 @@
 ## 0.0.40
-*INCOMPLETE*
++ Function now supports Linux, across `x86_64` and `arm64` architectures.
 
 ## 0.0.39
 + Updated `Acceleration` type from string constant to integer enumeration.
