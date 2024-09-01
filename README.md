@@ -4,7 +4,10 @@
 
 [![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Finvites%2Fy5vwgXkz2f%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&logo=discord&logoColor=white&label=Function%20community)](https://fxn.ai/community)
 
-Run Python functions (a.k.a "predictors") locally in the browser and Node.js, with full GPU acceleration and zero dependencies. In a few steps:
+Run Python functions (a.k.a "predictors") locally in the browser and Node.js, with full GPU acceleration and zero dependencies.
+
+> [!TIP]
+> [Join our waitlist](https://fxn.ai/waitlist) to bring your custom Python functions and run them on-device across Android, iOS, macOS, Linux, web, and Windows.
 
 > [!CAUTION]
 > **Never embed access keys client-side (i.e. in the browser)**. Instead, create a proxy URL in your backend.
@@ -12,7 +15,7 @@ Run Python functions (a.k.a "predictors") locally in the browser and Node.js, wi
 ## Installing Function
 Function is distributed on NPM. Open a terminal and run the following command:
 ```bash
-npm install fxnjs
+$ npm install fxnjs
 ```
 
 ## Retrieving your Access Key
@@ -36,12 +39,10 @@ const prediction = await fxn.predictions.create({
     tag: "@fxn/greeting",
     inputs: { name: "Rhea" }
 });
+
 // Log the result
 console.log(prediction.results[0]);
 ```
-
-> [!TIP]
-> Explore public predictors [on Function](https://fxn.ai/explore) or [create your own](https://fxn.ai/waitlist).
 
 ___
 
