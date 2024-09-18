@@ -3,24 +3,10 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import { GraphClient } from "../api"
 import { getFxnc, type FXNC } from "../c"
+import type { FunctionClient } from "../client"
 import { BoolArray, isImage, isTensor } from "../types"
 import type { Acceleration, Prediction, TypedArray, Value } from "../types"
-
-export const PREDICTION_FIELDS = `
-id
-tag
-created
-configuration
-resources {
-    type
-    url
-}
-latency
-error
-logs
-`;
 
 export interface CreatePredictionInput {
     /**
@@ -56,11 +42,11 @@ export interface DeletePredictionInput {
 
 export class PredictionService {
 
-    private readonly client: GraphClient;
+    private readonly client: FunctionClient;
     private readonly cache: Map<string, FXNPredictor>;
     private fxnc: FXNC;
 
-    public constructor (client: GraphClient) {
+    public constructor (client: FunctionClient) {
         this.client = client;
         this.cache = new Map<string, FXNPredictor>();
     }
@@ -144,21 +130,12 @@ export class PredictionService {
             clientId = this.fxnc?.FXNConfiguration.getClientId() ?? "node",
             configurationId = this.fxnc?.FXNConfiguration.getUniqueId()
         } = input;
-        // Query
-        const url = `${this.client.url}/predict/${tag}`;
-        const headers: Record<string, string> = {
-            "Content-Type": "application/json",
-            "Authorization": this.client.auth,
-            "fxn-client": clientId,
-        };
-        if (configurationId != null)
-            headers["fxn-configuration-token"] = configurationId;
-        const response = await fetch(url, { method: "POST", headers, body: "{}" });        
-        let prediction = await response.json();
-        // Check
-        if (!response.ok)
-            throw new Error(prediction.errors?.[0].message ?? "An unknown error occurred");
-        // Return
+        const prediction = await this.client.request<Prediction>({
+            path: "/predictions",
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: { tag, clientId, configurationId }
+        })
         return prediction;
     }
 

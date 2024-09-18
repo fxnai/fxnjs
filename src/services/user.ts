@@ -3,14 +3,14 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import { GraphClient } from "../api"
+import type { FunctionAPIError, FunctionClient } from "../client"
 import type { User } from "../types"
 
 export class UserService {
 
-    private readonly client: GraphClient;
+    private readonly client: FunctionClient;
 
-    public constructor (client: GraphClient) {
+    public constructor (client: FunctionClient) {
         this.client = client;
     }
 
@@ -19,24 +19,14 @@ export class UserService {
      * @param input Input arguments. If `null` then this will retrieve the currently authenticated user.
      * @returns User.
      */
-    public async retrieve (): Promise<User> {
-        const { data: { user } } = await this.client.query<{ user: User }>({
-            query: `query ($input: UserInput) {
-                user (input: $input) {
-                    ${USER_FIELDS}
-                }
-            }`,
-        });
-        return user;
+    public async retrieve (): Promise<User | null> {
+        try {
+            const user = await this.client.request<User>({ path: "/users" });
+            return user;
+        } catch (error: unknown) {
+            if ((error as FunctionAPIError).status === 401)
+                return null;
+            throw error;
+        }
     }
 }
-
-const USER_FIELDS = `
-username
-name
-avatar
-bio
-website
-github
-created
-`;

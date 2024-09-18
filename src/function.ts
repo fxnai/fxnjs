@@ -3,7 +3,7 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import { GraphClient } from "./api"
+import { FunctionClient } from "./client"
 import { PredictionService, PredictorService, UserService } from "./services"
 
 export interface FunctionConfig {
@@ -26,7 +26,7 @@ export class Function {
      * Graph API client.
      * Do NOT use this unless you know what you are doing.
      */
-    public readonly client: GraphClient;
+    public readonly client: FunctionClient;
 
     /**
      * Manage users.
@@ -48,7 +48,7 @@ export class Function {
      * @param config Function client configuration.
      */
     public constructor (config?: FunctionConfig) {
-        this.client = new GraphClient(config ?? { });
+        this.client = new FunctionClient(config ?? { });
         this.users = new UserService(this.client);
         this.predictors = new PredictorService(this.client);
         this.predictions = new PredictionService(this.client);

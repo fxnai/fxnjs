@@ -3,7 +3,7 @@
 *   Copyright © 2024 NatML Inc. All Rights Reserved.
 */
 
-import { GraphClient } from "../api"
+import type { FunctionAPIError, FunctionClient } from "../client"
 import type { Predictor } from "../types"
 
 export interface RetrievePredictorInput {
@@ -15,9 +15,9 @@ export interface RetrievePredictorInput {
 
 export class PredictorService {
 
-    private readonly client: GraphClient;
+    private readonly client: FunctionClient;
 
-    public constructor (client: GraphClient) {
+    public constructor (client: FunctionClient) {
         this.client = client;
     }
 
@@ -26,74 +26,14 @@ export class PredictorService {
      * @param input Input arguments.
      * @returns Predictor.
      */
-    public async retrieve (input: RetrievePredictorInput): Promise<Predictor> {
-        const { data: { predictor } } = await this.client.query<{ predictor: Predictor }>({
-            query: `query ($input: PredictorInput!) {
-                predictor (input: $input) {
-                    ${PREDICTOR_FIELDS}
-                }
-            }`,
-            variables: { input }
-        });
-        return predictor;
+    public async retrieve ({ tag }: RetrievePredictorInput): Promise<Predictor | null> {
+        try {
+            const predictor = await this.client.request<Predictor>({ path: `/predictors/${tag}` });
+            return predictor;
+        } catch (error: unknown) {
+            if ((error as FunctionAPIError).status === 404)
+                return null;
+            throw error;
+        }
     }
 }
-
-const PREDICTOR_FIELDS = `
-tag
-owner {
-    username
-    name
-    avatar
-    bio
-    website
-    github
-    created
-}
-name
-status
-access
-predictions
-created
-description
-card
-media
-signature {
-    inputs {
-        name
-        type
-        description
-        range
-        optional
-        enumeration {
-            name
-            value
-        }
-        defaultValue {
-            data
-            type
-            shape
-        }
-        schema
-    }
-    outputs {
-        name
-        type
-        description
-        range
-        optional
-        enumeration {
-            name
-            value
-        }
-        defaultValue {
-            data
-            type
-            shape
-        }
-        schema
-    }
-}
-error
-license
-`;

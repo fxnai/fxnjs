@@ -16,16 +16,19 @@ class PredictorTest {
     public before () {
         should();
         use(chaiAsPromised);
-        this.fxn = new Function({
-            accessKey: process.env.FXN_ACCESS_KEY,
-            url: process.env.FXN_API_URL
-        });
+        this.fxn = new Function();
     }
 
     @mocha.test
     async "Should retrieve a predictor" () {
         const tag = "@yusuf/identity";
         const predictor = await this.fxn.predictors.retrieve({ tag });
-        expect(predictor.tag).to.equal(tag);
+        expect(predictor?.tag).to.equal(tag);
+    }
+
+    @mocha.test
+    async "Should retrieve a non-existent predictor" () {
+        const predictor = await this.fxn.predictors.retrieve({ tag: "@yusuf/404" });
+        expect(predictor).to.be.null;
     }
 }

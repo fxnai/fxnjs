@@ -1,3 +1,8 @@
+## 0.0.41
++ Fixed `Function` client not detecting `FXN_ACCESS_KEY` environment variable.
++ Fixed `Function` client not detecting `FXN_API_URL` environment variable.
++ Removed `PREDICTION_FIELDS` constant.
+
 ## 0.0.40
 + Function now supports Linux, across `x86_64` and `arm64` architectures.
 

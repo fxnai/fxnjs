@@ -16,15 +16,19 @@ class UserTest {
     public before () {
         should();
         use(chaiAsPromised);
-        this.fxn = new Function({
-            accessKey: process.env.FXN_ACCESS_KEY,
-            url: process.env.FXN_API_URL
-        });
+        this.fxn = new Function();
     }
 
     @mocha.test
     async "Should retrieve the current user" () {
-        const user = await this.fxn.users.retrieve() as User;
-        expect(user.username).to.equal("yusuf");
+        const user = await this.fxn.users.retrieve();
+        expect(user?.username).to.equal("yusuf");
+    }
+
+    @mocha.test
+    async "Should retrieve no user" () {
+        const fxn = new Function({ accessKey: "", url: process.env.FXN_API_URL });
+        const user = await fxn.users.retrieve();
+        expect(user).to.be.null;
     }
 }
