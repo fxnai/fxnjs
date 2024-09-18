@@ -1,3 +1,6 @@
+## 0.0.42
+*INCOMPLETE*
+
 ## 0.0.41
 + Fixed `Function` client not detecting `FXN_ACCESS_KEY` environment variable.
 + Fixed `Function` client not detecting `FXN_API_URL` environment variable.
