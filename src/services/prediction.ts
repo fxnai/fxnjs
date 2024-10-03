@@ -70,8 +70,8 @@ export class PredictionService {
             prediction = predictor.createPrediction(inputMap);
             return this.toPrediction(tag, prediction);
         } finally {
-            inputMap?.dispose();
             prediction?.dispose();
+            inputMap?.dispose();
         }
     }
 
@@ -100,8 +100,8 @@ export class PredictionService {
                 prediction.dispose();
             }
         } finally {
-            inputMap?.dispose();
             stream?.dispose();
+            inputMap?.dispose();
         }
     }
 
@@ -135,7 +135,7 @@ export class PredictionService {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: { tag, clientId, configurationId }
-        })
+        });
         return prediction;
     }
 
