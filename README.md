@@ -48,7 +48,7 @@ ___
 
 ## Useful Links
 - [Discover predictors to use in your apps](https://fxn.ai/explore).
-- [Join our Discord community](https://fxn.ai/community).
+- [Join our Discord community](https://discord.gg/fxn).
 - [Check out our docs](https://docs.fxn.ai).
 - Learn more about us [on our blog](https://blog.fxn.ai).
 - Reach out to us at [hi@fxn.ai](mailto:hi@fxn.ai).
