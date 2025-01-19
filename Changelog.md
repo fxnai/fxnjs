@@ -1,3 +1,6 @@
+## 0.0.43
+*INCOMPLETE*
+
 ## 0.0.42
 + Added `fxn.beta.predictions.remote.create` method for creating predictions on remote GPU servers.
 + Updated to Function C 0.0.34.
