@@ -1,6 +1,6 @@
 /*
 *   Function
-*   Copyright © 2024 NatML Inc. All Rights Reserved.
+*   Copyright © 2025 NatML Inc. All Rights Reserved.
 */
 
 import type { Value } from "./value"
@@ -61,4 +61,26 @@ export interface PredictionResource {
      * Resource name.
      */
     name?: string;
+}
+
+/**
+ * Predictor acceleration.
+ */
+export enum Acceleration {
+    /**
+     * Automatically choose the best acceleration for the current device.
+     */
+    Auto = 0,
+    /**
+     * Predictions run on the CPU.
+     */
+    CPU = 1 << 0,
+    /**
+     * Predictions run on the GPU.
+     */
+    GPU = 1 << 1,
+    /**
+     * Predictions run on the neural processor.
+     */
+    NPU = 1 << 2,
 }

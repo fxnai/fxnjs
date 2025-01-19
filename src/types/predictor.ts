@@ -1,32 +1,10 @@
 /*
 *   Function
-*   Copyright © 2024 NatML Inc. All Rights Reserved.
+*   Copyright © 2025 NatML Inc. All Rights Reserved.
 */
 
 import type { User } from "./user"
 import type { Dtype, Value } from "./value"
-
-/**
- * Predictor acceleration.
- */
-export enum Acceleration {
-    /**
-     * Use the default acceleration for this platform.
-     */
-    Default = 0,
-    /**
-     * Predictions run on the CPU.
-     */
-    CPU     = 1 << 0,
-    /**
-     * Predictions run on the GPU.
-     */
-    GPU     = 1 << 1,
-    /**
-     * Predictions run on the neural processor.
-     */
-    NPU     = 1 << 2,
-}
 
 /**
  * Predictor access mode.

@@ -1,6 +1,6 @@
 /*
 *   Function
-*   Copyright © 2024 NatML Inc. All Rights Reserved.
+*   Copyright © 2025 NatML Inc. All Rights Reserved.
 */
 
 import type { FunctionConfig } from "./function"
@@ -49,7 +49,12 @@ export class FunctionClient {
     /**
      * Make a request to the Function API.
      */
-    public async request<T = any> ({ path, method = "GET", headers, body }: RequestInput): Promise<T> {
+    public async request<T = any> ({
+        path,
+        method = "GET",
+        headers,
+        body
+    }: RequestInput): Promise<T> {
         const response = await fetch(
             `${this.url}${path}`,
             {

@@ -15,6 +15,7 @@ Run Python functions (a.k.a "predictors") locally in the browser and Node.js, wi
 ## Installing Function
 Function is distributed on NPM. Open a terminal and run the following command:
 ```bash
+# Run this in Terminal
 $ npm install fxnjs
 ```
 

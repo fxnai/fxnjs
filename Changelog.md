@@ -1,5 +1,6 @@
 ## 0.0.42
-*INCOMPLETE*
++ Added `fxn.beta.predictions.remote.create` method for creating predictions on remote GPU servers.
++ Updated to Function C 0.0.34.
 
 ## 0.0.41
 + Fixed `Function` client not detecting `FXN_ACCESS_KEY` environment variable.

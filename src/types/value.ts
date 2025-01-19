@@ -1,6 +1,6 @@
 /*
 *   Function
-*   Copyright © 2024 NatML Inc. All Rights Reserved.
+*   Copyright © 2025 NatML Inc. All Rights Reserved.
 */
 
 /**
@@ -108,7 +108,8 @@ export type Value =
     TypedArray                      |
     Tensor                          |
     Image                           |
-    ArrayBuffer;
+    ArrayBuffer                     |
+    null;
 
 /**
  * Check whether an input value is a Function `Tensor`.

@@ -1,8 +1,9 @@
 /*
 *   Function
-*   Copyright © 2024 NatML Inc. All Rights Reserved.
+*   Copyright © 2025 NatML Inc. All Rights Reserved.
 */
 
+import { BetaClient } from "./beta/client"
 import { FunctionClient } from "./client"
 import { PredictionService, PredictorService, UserService } from "./services"
 
@@ -44,6 +45,11 @@ export class Function {
     public readonly predictions: PredictionService;
 
     /**
+     * Beta client for incubating features.
+     */
+    public readonly beta: BetaClient;
+
+    /**
      * Create a Function client.
      * @param config Function client configuration.
      */
@@ -52,5 +58,6 @@ export class Function {
         this.users = new UserService(this.client);
         this.predictors = new PredictorService(this.client);
         this.predictions = new PredictionService(this.client);
+        this.beta = new BetaClient(this.client);
     }
 }
