@@ -1,5 +1,6 @@
 ## 0.0.43
-*INCOMPLETE*
++ Refactored `PROVISIONING` predictor status to `COMPILING`.
++ Removed `Parameter.defaultValue` field.
 
 ## 0.0.42
 + Added `fxn.beta.predictions.remote.create` method for creating predictions on remote GPU servers.

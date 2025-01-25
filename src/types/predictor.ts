@@ -4,7 +4,7 @@
 */
 
 import type { User } from "./user"
-import type { Dtype, Value } from "./value"
+import type { Dtype } from "./value"
 
 /**
  * Predictor access mode.
@@ -14,7 +14,7 @@ export type AccessMode = "PUBLIC" | "PRIVATE";
 /**
  * Predictor status.
  */
-export type PredictorStatus = "PROVISIONING" | "ACTIVE" | "INVALID" | "ARCHIVED";
+export type PredictorStatus = "COMPILING" | "ACTIVE" | "INVALID" | "ARCHIVED";
 
 /**
  * Prediction function.
@@ -120,10 +120,6 @@ export interface Parameter {
      * Parameter value choices for enumeration parameters.
      */
     enumeration?: EnumerationMember[];
-    /**
-     * Parameter default value.
-     */
-    defaultValue?: Value;
     /**
      * Parameter JSON schema.
      * This is only populated for `list` and `dict` parameters.
