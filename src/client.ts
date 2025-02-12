@@ -30,7 +30,11 @@ export interface RequestInput {
  */
 export class FunctionClient {
 
-    private readonly url: string;
+    /**
+     * Function API URL.
+     */
+    public readonly url: string;
+
     private readonly auth: string;
     public static readonly URL: string = "https://api.fxn.ai/v1";
 
