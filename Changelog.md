@@ -1,10 +1,11 @@
 ## 0.0.43
 + Refactored `PROVISIONING` predictor status to `COMPILING`.
 + Removed `Parameter.defaultValue` field.
++ Upgraded to Function C 0.0.34.
 
 ## 0.0.42
 + Added `fxn.beta.predictions.remote.create` method for creating predictions on remote GPU servers.
-+ Updated to Function C 0.0.34.
++ Upgraded to Function C 0.0.34.
 
 ## 0.0.41
 + Fixed `Function` client not detecting `FXN_ACCESS_KEY` environment variable.
@@ -17,7 +18,6 @@
 ## 0.0.39
 + Updated `Acceleration` type from string constant to integer enumeration.
 + Updated `Value` type to be a union of plain JavaScript types.
-+ Updated to Function C 0.0.27.
 + Removed `fxn.environmentVariables` field.
 + Removed `fxn.storage` field.
 + Removed `fxn.users.update` method.
@@ -39,6 +39,7 @@
 + Removed `USER_FIELDS` constant.
 + Removed `PROFILE_FIELDS` constant.
 + Removed `PREDICTOR_FIELDS` constant.
++ Upgraded to Function C 0.0.27.
 
 ## 0.0.38
 + Fixed Webpack bundler errors caused by Function.
@@ -60,22 +61,22 @@
 + Refactored `PredictorType` type from enumeration to string literal.
 + Refactored `UploadType` type from enumeration to string literal.
 + Updated `Image.data` field type to `Uint8ClampedArray`.
-+ Updated to Function C 0.0.26.
++ Upgraded to Function C 0.0.26.
 
 ## 0.0.34
 + Added `Image.channels` field for inspecting image channel count.
 + Fixed edge prediction output `Image` having incorrect `width` and `height`.
-+ Updated to Function C 0.0.20.
++ Upgraded to Function C 0.0.20.
 
 ## 0.0.33
 + Fixed edge prediction errors caused by request backpressure while the predictor is being loaded.
-+ Updated to Function C 0.0.19.
++ Upgraded to Function C 0.0.19.
 
 ## 0.0.32
 + Fixed `isFunctionValue` type guard function returning `false` for `null` Function values.
 
 ## 0.0.31
-+ Updated to Function C 0.0.18.
++ Upgraded to Function C 0.0.18.
 
 ## 0.0.30
 + Added support for making edge predictions on `ImageData` input values.
