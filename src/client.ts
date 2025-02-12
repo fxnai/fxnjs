@@ -36,7 +36,7 @@ export class FunctionClient {
     public readonly url: string;
 
     private readonly auth: string;
-    public static readonly URL: string = "https://api.fxn.ai/v1";
+    private static readonly URL: string = "https://api.fxn.ai/v1";
 
     /**
      * Create a Function API client.
