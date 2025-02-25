@@ -1,4 +1,5 @@
 ## 0.0.44
++ Refactored `AccessMode` type to `PredictorAccess`.
 + Removed `INVALID` predictor status.
 + Removed `Predictor.predictions` field.
 + Removed `Predictor.error` field.

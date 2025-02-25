@@ -9,7 +9,7 @@ import type { Dtype } from "./value"
 /**
  * Predictor access mode.
  */
-export type AccessMode = "PUBLIC" | "PRIVATE";
+export type PredictorAccess = "PUBLIC" | "PRIVATE";
 
 /**
  * Predictor status.
@@ -43,7 +43,7 @@ export interface Predictor {
     /**
      * Predictor access mode.
      */
-    access: AccessMode;
+    access: PredictorAccess;
     /**
      * Predictor signature.
      */

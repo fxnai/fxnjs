@@ -58,10 +58,8 @@ export class PredictionService {
      */
     public async create (input: CreatePredictionInput): Promise<Prediction> {
         const { tag, inputs } = input;
-        // Check for raw prediction
         if (!inputs)
             return this.createRawPrediction(input);
-        // Predict
         const predictor = await this.getPredictor(input);
         let inputMap: FXNValueMap;
         let prediction: FXNPrediction;
@@ -82,10 +80,8 @@ export class PredictionService {
      * @returns Generator which asynchronously returns prediction results as they are streamed from the predictor.
      */
     public async * stream (input: CreatePredictionInput): AsyncGenerator<Prediction> {
-        // Check inputs
         const { tag, inputs } = input;
         assert(!!inputs, `Failed to stream ${tag} prediction because prediction inputs were not provided`);
-        // Predict
         const predictor = await this.getPredictor(input);
         let inputMap: FXNValueMap;
         let stream: FXNPredictionStream;
@@ -112,14 +108,11 @@ export class PredictionService {
      */
     public async delete (input: DeletePredictionInput): Promise<boolean> {
         const { tag } = input;
-        // Check
         if (!this.cache.has(tag))
             return false;
-        // Release
         const predictor = this.cache.get(tag);
         this.cache.delete(tag);
         predictor.dispose();
-        // Throws on failure
         return true;
     }
 
@@ -141,17 +134,13 @@ export class PredictionService {
 
     private async getPredictor (input: CreatePredictionInput): Promise<FXNPredictor> {
         const { tag, acceleration } = input;
-        // Check cache
         if (this.cache.has(tag))
             return this.cache.get(tag);
-        // Load fxnc
         this.fxnc ??= await getFxnc();
         assert(this.fxnc, `Failed to create ${tag} prediction because Function implementation has not been loaded`);
         const { FXNConfiguration, FXNPredictor } = this.fxnc;
-        // Create prediction
         const prediction = await this.createRawPrediction(input);
         assert(prediction.configuration, `Failed to create ${tag} prediction because configuration token is missing`);
-        // Load predictor
         let configuration: FXNConfiguration;
         try {
             configuration = FXNConfiguration.create();
@@ -170,45 +159,34 @@ export class PredictionService {
     
     private toValue (value: Value): FXNValue {
         const { FXNValue } = this.fxnc;
-        // Null
         if (value == null)
             return FXNValue.createNull();
-        // Tensor
         if (isTensor(value))
             return FXNValue.createArray(value.data, value.shape, 0);
-        // Typed array
         if (ArrayBuffer.isView(value))
             return FXNValue.createArray(
                 value as any,
                 [value.byteLength / (value.constructor as unknown as TypedArray).BYTES_PER_ELEMENT],
                 0
             );
-        // Binary
         if (value instanceof ArrayBuffer)
             return FXNValue.createBinary(value, 0);
-        // String
         if (typeof(value) === "string")
             return FXNValue.createString(value);
-        // Number
         if (typeof(value) === "number")
             return FXNValue.createArray(
                 Number.isInteger(value) ? new Int32Array([value]) : new Float32Array([value]),
                 null,
                 1
             );
-        // Bigint
         if (typeof(value) === "bigint")
             return FXNValue.createArray(new BigInt64Array([value]), null, 1);
-        // Boolean
         if (typeof(value) === "boolean")
             return FXNValue.createArray(new BoolArray([value]), null, 1);
-        // Image
         if (isImage(value))
             return FXNValue.createImage(value, 0);
-        // List
         if (Array.isArray(value))
             return FXNValue.createList(value);
-        // Dict
         if (typeof(value) === "object")
             return FXNValue.createDict(value);
         throw new Error(`Failed to create prediction input value for unsupported type: ${typeof(value)}`);
