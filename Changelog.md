@@ -1,3 +1,8 @@
+## 0.0.44
++ Removed `INVALID` predictor status.
++ Removed `Predictor.predictions` field.
++ Removed `Predictor.error` field.
+
 ## 0.0.43
 + Refactored `PROVISIONING` predictor status to `COMPILING`.
 + Removed `Parameter.defaultValue` field.

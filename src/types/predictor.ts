@@ -14,7 +14,7 @@ export type AccessMode = "PUBLIC" | "PRIVATE";
 /**
  * Predictor status.
  */
-export type PredictorStatus = "COMPILING" | "ACTIVE" | "INVALID" | "ARCHIVED";
+export type PredictorStatus = "COMPILING" | "ACTIVE" | "ARCHIVED";
 
 /**
  * Prediction function.
@@ -33,6 +33,10 @@ export interface Predictor {
      */
     name: string;
     /**
+     * Predictor description.
+     */
+    description: string;
+    /**
      * Predictor status.
      */
     status: PredictorStatus;
@@ -45,17 +49,9 @@ export interface Predictor {
      */
     signature: Signature;
     /**
-     * Number of predictions made with this predictor.
-     */
-    predictions: number;
-    /**
      * Date created.
      */
     created: Date;
-    /**
-     * Predictor description.
-     */
-    description?: string;
     /**
      * Predictor card.
      */
@@ -65,11 +61,6 @@ export interface Predictor {
      * We encourage animated GIF's where possible.
      */
     media?: string;
-    /**
-     * Predictor provisioning error.
-     * This is populated when the predictor `status` is `INVALID`.
-     */
-    error?: string;
     /**
      * Predictor license URL.
      */
