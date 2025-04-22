@@ -4,5 +4,6 @@
 */
 
 export type { CreateRemotePredictionInput, RemoteAcceleration } from "./beta"
+export type { FunctionAPIError } from "./client"
 export * from "./function"
 export * from "./types"
