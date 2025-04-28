@@ -3,6 +3,7 @@
 + Removed `INVALID` predictor status.
 + Removed `Predictor.predictions` field.
 + Removed `Predictor.error` field.
++ Upgraded to Function C 0.0.35.
 
 ## 0.0.43
 + Refactored `PROVISIONING` predictor status to `COMPILING`.
